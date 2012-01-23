@@ -1,4 +1,4 @@
 # jsjs
 ## A handy javascript to javascript compiler
 
-  ./jsjs.js <js_file/s>
+  ./jsjs.js __js_file/__
