@@ -20,30 +20,35 @@
             '    ' : opts.format;
         return jsjs.compile(opts)(jsjs.parse(input));
     };
+    
+    function loadFiles(){
+       if (require.main === module){
+           var argv = require('optimist').argv,
+               fs = require('fs');
+           argv._.map(function(src){
+               fs.readFile(src, function(err, data){
+                   if (err) return console.log(err);
+                   console.log(jsjs.read(data.toString()));
+               });
+           });
+       }
+    }
 
     // Export if we are in commonjs,
     // save it to the root object otherwise
-    if (typeof exports !== 'undefined'){
+    if (typeof exports !== 'undefined'){ 
        try {
            jsjs.parse = require('./parser').parse;
+           loadFiles();
        } catch(e) {
            console.log('parser not found, trying to compile grammar...');
            var spawn = require('child_process').spawn,
                peg = spawn('pegjs',['grammar.pegjs','parser.js']);
+           jsjs.parse = require('./parser').parse; 
            peg.on('exit',function(){ 
-                jsjs.parse = require('./parser').parse; 
-                if (require.main === module){
-                   var argv = require('optimist').argv,
-                       fs = require('fs');
-                   argv._.map(function(src){
-                       fs.readFile(src, function(err, data){
-                           if (err) return err;
-                           console.log(jsjs.read(data.toString()));
-                       });
-                   });
-               }
-          });
-       }
+                loadFiles();
+           });
+       } 
        if (typeof module !== 'undefined'){
             exports = module.exports = jsjs;
        }
@@ -137,8 +142,8 @@
                 },
                 'StringLiteral': function(){
                     var replaces = [
-                        ["\\r","\\\\r"],
-                        ["\\n","\\\\n"],
+                        ["\\r","\\r"],
+                        ["\\n","\\n"],
                         ["\\\\","\\\\"],
                     ];
                     return '\"' +replaces.reduce(function(str, rep){
@@ -189,8 +194,32 @@
                             : 'undefined';
                     return '\"' +node.name +'\":' +sp(flags) +value;
                 },
-                'GetterDefinition': log,
-                'SetterDefinition': log,
+                'GetterDefinition': function(){
+                    var body = node.body ?
+                            node.body.length ?
+                                node.body.map(compile(flags, il+1))
+                                : []
+                            : [];
+                    return 'get ' +node.name +'(){'
+                           +nli(flags, il+1)
+                           +body.join(';'+nli(flags, il+1))
+                           +nli(flags, il)
+                           +'}';
+                },
+                'SetterDefinition': function(){
+                    var body = node.body ?
+                            node.body.length ?
+                                node.body.map(compile(flags, il+1))
+                                : []
+                            : [];
+                    return 'get ' +node.name +'('
+                           +node.param
+                           +'){'
+                           +nli(flags, il+1)
+                           +body.join(';'+nli(flags, il+1))
+                           +nli(flags, il)
+                           +'}';
+                },
                 'NewOperator': function(){
                     var constructor = node.constructor ?
                             node.constructor.type ?
