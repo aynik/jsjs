@@ -1,5 +1,5 @@
 {
-    "name": "jsjs",
+    "name": "node-jsjs",
     "description": "Javascript beautifier",
     "keywords": [
         "javascript",
@@ -7,7 +7,7 @@
         "beautifier"
     ],
     "author": "aynik",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "repository": {
         "type": "git",
         "url": "https://github.com/aynik/jsjs.git"
