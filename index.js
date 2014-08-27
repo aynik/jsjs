@@ -376,8 +376,8 @@ var compile = exports.compile = function(flags, il, debug){
                        +';';
             },
             'WithStatement': function(){
-                var environment = node.environment ? compile(node.environment) : '',
-                    statement = node.statement ? compile(node.statement) : '';
+                var environment = node.environment ? compile(flags, il)(node.environment) : '',
+                    statement = node.statement ? compile(flags, il)(node.statement) : '';
                 return 'with' +sp(flags) + '(' + environment + '){' 
                     +nli(flags, il) +statement +nli(flags, il)
                     + '}';
