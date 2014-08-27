@@ -140,6 +140,7 @@ Keyword
       / "finally"
       / "for"
       / "function"
+      / "ƒ"
       / "if"
       / "instanceof"
       / "in"
@@ -374,6 +375,7 @@ FalseToken      = "false"            !IdentifierPart
 FinallyToken    = "finally"          !IdentifierPart
 ForToken        = "for"              !IdentifierPart
 FunctionToken   = "function"         !IdentifierPart
+FlorinToken     = "ƒ"                !IdentifierPart
 GetToken        = "get"              !IdentifierPart
 IfToken         = "if"               !IdentifierPart
 InstanceofToken = "instanceof"       !IdentifierPart { return "instanceof"; }
@@ -1121,13 +1123,13 @@ Statement
   / BreakStatement
   / ReturnStatement
   / WithStatement
-  / LabelledStatement
   / SwitchStatement
   / ThrowStatement
   / TryStatement
   / DebuggerStatement
   / FunctionDeclaration
   / FunctionExpression
+  / PrimaryExpression
 
 Block
   = "{" __ statements:(StatementList __)? "}" {
@@ -1200,7 +1202,7 @@ EmptyStatement
   = ";" { return { type: "EmptyStatement" }; }
 
 ExpressionStatement
-  = !("{" / FunctionToken) expression:Expression EOS { return expression; }
+  = !("{" / FunctionToken / FlorinToken) expression:Expression EOS { return expression; }
 
 IfStatement
   = IfToken __
@@ -1388,15 +1390,6 @@ DefaultClause
       };
     }
 
-LabelledStatement
-  = label:Identifier __ ":" __ statement:Statement {
-      return {
-        type:      "LabelledStatement",
-        label:     label,
-        statement: statement
-      };
-    }
-
 ThrowStatement
   = ThrowToken _ exception:Expression EOSNoLineTerminator {
       return {
@@ -1454,7 +1447,7 @@ DebuggerStatement
 /* ===== A.5 Functions and Programs ===== */
 
 FunctionDeclaration
-  = FunctionToken __ name:Identifier __
+  = (FlorinToken / FunctionToken) __ name:Identifier __
     "(" __ params:FormalParameterList? __ ")" __
     "{" __ elements:FunctionBody __ "}" {
       return {
@@ -1466,7 +1459,7 @@ FunctionDeclaration
     }
 
 FunctionExpression
-  = FunctionToken __ name:Identifier? __
+  = (FlorinToken / FunctionToken) __ name:Identifier? __
     "(" __ params:FormalParameterList? __ ")" __
     "{" __ elements:FunctionBody __ "}" {
       return {

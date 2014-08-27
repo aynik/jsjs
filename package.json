@@ -1,0 +1,28 @@
+{
+    "name": "jsjs",
+    "description": "Javascript beautifier",
+    "keywords": [
+        "javascript",
+        "transpiler",
+        "beautifier"
+    ],
+    "author": "aynik",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aynik/jsjs.git"
+    },
+    "bugs": {
+        "url": "https://github.com/aynik/js/issues"
+    },
+    "bin": "./bin/jsjs",
+    "dependencies": {
+        "optimist": ">=0.6.1"
+    },
+    "devDependencies": {
+        "tape": ">=2.13.4"
+    },
+    "scripts": {
+        "test": "tape test/*"
+    }
+}

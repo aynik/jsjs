@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+var argv = require('optimist').argv,
+    fs = require('fs');
+
+argv._.map(function(src){
+   fs.readFile(src, function(err, data){
+       if (err) return console.log(err);
+       var source = data.toString();
+       if (source.substr(0,1) === "#"){
+           source = source.substr(
+               source.indexOf('\n')+1, source.length);
+       }
+       console.log(require('../').read(source, argv));
+   });
+});
