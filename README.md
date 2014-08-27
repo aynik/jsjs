@@ -21,11 +21,11 @@ $ npm install [-g] jsjs
 
 ```bash
 $ jsjs [options] <file> [...<files>]
-``
+```
 
 ### Options
 
-* [`--format, -f [chars]`](#format)
+* [`--format, -f [prefix]`](#format)
 * [`--squeeze, -s`](#squeeze)
 
 ---
@@ -33,9 +33,9 @@ $ jsjs [options] <file> [...<files>]
 ## Options
 
 <a name="format" />
-### jsjs --format [chars] | -f [chars]
+### jsjs --format [prefix] | -f [prefix]
 
-Indents code using `chars` string as the minimum unit.
+Indents code using `prefix` string as the minimum unit.
 
 ---
 
