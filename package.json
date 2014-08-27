@@ -7,7 +7,7 @@
         "beautifier"
     ],
     "author": "aynik",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
         "url": "https://github.com/aynik/jsjs.git"
@@ -17,7 +17,7 @@
     },
     "bin": "./bin/jsjs",
     "dependencies": {
-        "optimist": ">=0.6.1"
+        "commander": ">=2.3.0"
     },
     "devDependencies": {
         "tape": ">=2.13.4"

@@ -1,13 +1,7 @@
-# jsjs
-## A handy javascript to javascript compiler
-
-  ./jsjs.js __js_file__
-
-
 # Jsjs
 ## A handy javascript to javascript transpiler
 
-[![Build Status via Travis CI](https://travis-ci.org/aynik/jsjs.svg?branch=master)](https://travis-ci.org/aynik/sx)
+[![Build Status via Travis CI](https://travis-ci.org/aynik/jsjs.svg?branch=master)](https://travis-ci.org/aynik/jsjs)
 
 Pull requests are very welcome!
 

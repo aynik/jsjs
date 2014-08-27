@@ -1,9 +1,14 @@
 #!/usr/bin/env node
+var fs = require('fs');
 
-var argv = require('optimist').argv,
-    fs = require('fs');
+var program = require('commander')
+  .version(require('../package').version)
+  .usage('[options] file [..files]')
+  .option('-t, --tab [prefix]', 'tabulate output with selected prefix')
+  .option('-c, --compress', 'drop unnecessary white space')
+  .parse(process.argv);
 
-argv._.map(function(src){
+program.args.map(function(src){
    fs.readFile(src, function(err, data){
        if (err) return console.log(err);
        var source = data.toString();
@@ -11,6 +16,6 @@ argv._.map(function(src){
            source = source.substr(
                source.indexOf('\n')+1, source.length);
        }
-       console.log(require('../').read(source, argv));
+       console.log(require('../').read(source, program));
    });
 });

@@ -1,8 +1,6 @@
 // Export reader
 exports.read = function(input, opts){
     opts = opts || {};
-    opts['format'] = !('format' in opts)? 
-        '    ' : opts.format;
     return compile(opts)(parse(input));
 };
 
@@ -11,18 +9,18 @@ var parse = exports.parse = require('./parser').parse;
 
 // Export compiler
 var compile = exports.compile = function(flags, il, debug){
-    flags = flags || { format: '  ' };
+    flags = flags || { tab: '  ' };
     il = il || 0; 
     var ind = function(){
-        if (!flags.format) return '';
-        else return (new Array(il+1)).join(flags.format);
+        if (!flags.tab) return '';
+        else return (new Array(il+1)).join(flags.tab);
     };
     var nli = function(){
-        if (!flags.format) return '';
+        if (!flags.tab) return '';
         else return '\n'+ind(flags, il);
     };
     var sp = function(){
-        if (flags.squeeze) return '';
+        if (flags.compress) return '';
         else return ' ';
     }; 
     var noop = function(){ return '' };
