@@ -1,502 +1,528 @@
 // Export reader
 exports.read = function(input, opts){
     opts = opts || {};
-    return compile(opts)(parse(input));
+    return compile(opts, parse(input));
 };
 
 // Export parser
 var parse = exports.parse = require('./parser').parse;
 
 // Export compiler
-var compile = exports.compile = function(flags, il, debug){
-    flags = flags || { tab: '  ' };
-    il = il || 0; 
-    var ind = function(){
+var compile = exports.compile = function(flags, ast){
+    flags = flags || {};
+    flags.tab = flags.tab || -1;
+    var tab = (new Array(parseInt(flags.tab === -1 ? 0 : flags.tab, 10)+1)).join(' ');
+    var ind = function(il){
         if (!flags.tab) return '';
-        else return (new Array(il+1)).join(flags.tab);
+        else return (new Array(il+1)).join(tab);
     };
-    var nli = function(){
-        if (!flags.tab) return '';
-        else return '\n'+ind(flags, il);
+    var nli = function(il){
+        if (flags.tab === -1) return '';
+        else return '\n' +ind(il);
+    };
+    var inl = function(il){
+        if (!il) return nli(il);
+        else return '';
     };
     var sp = function(){
         if (flags.compress) return '';
         else return ' ';
     }; 
     var noop = function(){ return '' };
-    return function(node){
-        var rules = {  
-            'Function': function(){
-                var name = node.name ? ' ' +node.name : '',
-                    elements = node.elements ?
-                        node.elements.length ?
-                            node.elements.map(compile(flags, il+1))
-                            : []
-                        : [];
-                    return (name ?
-                                'var' +name +sp(flags) +'=' +sp(flags)
-                                : '')
-                           +'(function' +name 
-                           +'(' +(node.params && node.params.length ? 
-                                   node.params.join(','+sp(flags)) 
-                                   : '') +'){'
-                           +nli(flags, il+1) 
-                           +elements.join(';'+nli(flags, il+1)) 
-                           +nli(flags, il) 
-                           +'})';
-            },
-            'FunctionCall': function(){
-                var name = node.name ?
-                    node.name.type ?
-                        compile(flags, il)(node.name)
-                        : node.name
-                    : '',
-                args = node.arguments ? 
-                    node.arguments.length ?
-                        node.arguments.map(compile(flags, il))
-                        : []
-                    : [];
-                return name 
-                       +'(' +args.join(',' +sp(flags)) + ')';
-            },
-            'PropertyAccess': function(){
-                var base = node.base ?
-                        compile(flags, il)(node.base)
-                        : '',
-                    name = node.name ?
+    var Element = function(type, code){
+        this.type = type;
+        this.code = code;
+    };
+    Element.prototype.toString = 
+        Element.prototype.valueOf = function(){
+            return this.code;
+        };
+    var inlineElements = {
+        AssignmentExpression:0,
+        FunctionCall:0,
+        VariableDeclaration:0,
+        PropertyAccess:0,
+        PropertyAssignment:0
+    };
+    //console.log(JSON.stringify(ast, null, 4));
+    return (function compile(il, par){ 
+        il = il || 0; 
+        return function(node){
+            var rules = {  
+                'Function': function(){
+                    var name = node.name ? ' ' +node.name : '',
+                        elements = node.elements ?
+                            node.elements.length ?
+                                node.elements.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                        return new Element(node.type, 
+                                (!(par in inlineElements) ? inl(il) : '') 
+                               +'function' +name 
+                               +'(' +(node.params && node.params.length ? 
+                                       node.params.join(','+sp()) 
+                                       : '') +'){'
+                               +nli(il+1) 
+                               +elements.join(';'+nli(il+1)) 
+                               +nli(il) 
+                               +'}');
+                },
+                'FunctionCall': function(){
+                    var name = node.name ?
                         node.name.type ?
-                            compile(flags, il)(node.name)
+                            compile(il, node.type)(node.name)
                             : node.name
-                        : '';
-                if (name.toString()
-                    .match(/\d+|[^\w$_]+[\w\d$_]*/)) 
-                        return base +'[' +name +']';
-                else return base +'.' +name; 
-            },
-            'Variable': function(){
-                return node.name;
-            },
-            'NumericLiteral': function(){
-                return node.value;
-            },
-            'StringLiteral': function(){
-                var replaces = [
-                    ["\\r","\\r"],
-                    ["\\n","\\n"],
-                    ["\\\\","\\\\"],
-                ];
-                return '\"' +replaces.reduce(function(str, rep){
-                    return str.replace(new RegExp(rep[0],'g'),rep[1]); 
-                }, node.value || "") +'\"';
-            },
-            'NullLiteral': function(){
-                return 'null';
-            },
-            'BooleanLiteral': function(){
-                return node.value; 
-            },
-            'RegularExpressionLiteral': function(){
-                return '/' +node.body +'/' +node.flags;
-            },
-            'This': function(){
-                return 'this';
-            },
-            'ArrayLiteral': function(){
-                var elements = node.elements ?
-                        node.elements.length ?
-                            node.elements.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return '[' 
-                        +(elements.length ?
-                            nli(flags, il+1)
-                            +elements.join(','+nli(flags, il+1))
-                            +nli(flags, il) : '')
-                        +']';
-            },
-            'ObjectLiteral': function(){
-                var properties = node.properties ?
-                        node.properties.length ?
-                            node.properties.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return '{'
-                        +(properties.length ? 
-                            nli(flags, il+1)
-                            +properties.join(','+nli(flags, il+1)) 
-                            +nli(flags, il) : '')
-                        +'}';
-            },
-            'PropertyAssignment': function(){
-                var value = node.value ?
-                        compile(flags, il)(node.value)
-                        : 'undefined';
-                return '\"' +node.name +'\":' +sp(flags) +value;
-            },
-            'GetterDefinition': function(){
-                var body = node.body ?
-                        node.body.length ?
-                            node.body.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return 'get ' +node.name +'(){'
-                       +nli(flags, il+1)
-                       +body.join(';'+nli(flags, il+1))
-                       +nli(flags, il)
-                       +'}';
-            },
-            'SetterDefinition': function(){
-                var body = node.body ?
-                        node.body.length ?
-                            node.body.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return 'get ' +node.name +'('
-                       +node.param
-                       +'){'
-                       +nli(flags, il+1)
-                       +body.join(';'+nli(flags, il+1))
-                       +nli(flags, il)
-                       +'}';
-            },
-            'NewOperator': function(){
-                var constructor = node.constructor ?
-                        node.constructor.type ?
-                            compile(flags, il)(node.constructor)
-                            : node.constructor
                         : '',
-                    args = node.arguments ?
+                    args = node.arguments ? 
                         node.arguments.length ?
-                            node.arguments.map(compile(flags, il))
+                            node.arguments.map(compile(il, node.type))
                             : []
                         : [];
-                return 'new ' +constructor +'('
-                       +args.join(',' +sp(flags))
-                       +')';
-            },
-            'FunctionCallArguments': noop,
-            'PropertyAccessProperty': noop,
-            'PostfixExpression': function(){
-               var expression = node.expression ?
-                        compile(flags, il)(node.expression)
-                        : '';
-               return expression +node.operator;
-            },
-            'UnaryExpression': function(){
-               var expression = node.expression ?
-                        compile(flags, il)(node.expression)
-                        : '';
-               return node.operator +' ' +expression;
-            },
-            'ConditionalExpression': function(){
-                var condition = node.condition ?
-                        node.condition.type ?
-                            compile(flags, il)(node.condition) 
-                            : node.condition
-                        : '',
-                  trueExpression = node.trueExpression ? 
-                            node.trueExpression.type ?
-                                compile(flags, il+2)(node.trueExpression)
-                                : node.trueExpression
+                    return new Element(node.type, 
+                        (!(par in inlineElements) ? inl(il) : '') +name 
+                           +'(' +args.join(',' +sp()) + ')');
+                },
+                'PropertyAccess': function(){
+                    var base = node.base ?
+                            compile(il, node.type)(node.base)
                             : '',
-                  falseExpression = node.falseExpression ? 
-                            node.falseExpression.type ?
-                                compile(flags, il+2)(node.falseExpression)
-                                : node.falseExpression
+                        name = node.name ?
+                            node.name.type ?
+                                compile(il, node.type)(node.name)
+                                : node.name
                             : '';
-                return condition +sp(flags) +'?'
-                       +nli(flags, il+1) 
-                       +'(' + trueExpression +')'
-                       +nli(flags, il+1)
-                       +':' +sp(flags) 
-                       +'(' +falseExpression +')';
-            },
-            'AssignmentExpression': function(){
-                var left = node.left ?
-                        compile(flags, il)(node.left) : 'undefined',
-                    right = node.right ?
-                        compile(flags, il)(node.right) : 'undefined';
-                return left 
-                       +sp(flags) 
-                       +node.operator 
-                       +sp(flags) 
-                       +(right.toString().indexOf('var') === 0 ?
-                            right.replace(/^var/,'')
-                            : right);
-            },
-            'Block': function(){
-               var statements = node.statements ?
-                        node.statements.length ?
-                            node.statements.map(compile(flags, il))
+                    if (String(name.toString())
+                        .match(/\d+|[^\w$_]+[\w\d$_]*/)) 
+                            return new Element(node.type, base +'[' +name +']');
+                    else return new Element(node.type, base +'.' +name); 
+                },
+                'Variable': function(){
+                    return new Element(node.type, node.name);
+                },
+                'NumericLiteral': function(){
+                    return new Element(node.type, node.value);
+                },
+                'StringLiteral': function(){
+                    var replaces = [ 
+                        ["\\\\", "\\\\"],
+                        ["\\n","\\n"],
+                        ["\\r","\\r"]
+                    ];
+                    var replaced = replaces.reduce(function(str, rep){
+                        return str.replace(new RegExp(rep[0],'g'),rep[1]); 
+                    }, node.value || "");
+                    return new Element(node.type, (replaced.indexOf("'")>-1?'"':"'") +replaced +(replaced.indexOf("'")>-1?'"':"'"));
+                },
+                'NullLiteral': function(){
+                    return new Element(node.type, 'null');
+                },
+                'BooleanLiteral': function(){
+                    return new Element(node.type, node.value); 
+                },
+                'RegularExpressionLiteral': function(){
+                    return new Element(node.type, '/' +node.body +'/' +node.flags);
+                },
+                'This': function(){
+                    return new Element(node.type, 'this');
+                },
+                'ArrayLiteral': function(){
+                    var elements = node.elements ?
+                            node.elements.length ?
+                                node.elements.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, '[' 
+                            +(elements.length ?
+                                nli(il+1)
+                                +elements.join(','+nli(il+1))
+                                +nli(il) : '')
+                            +']');
+                },
+                'ObjectLiteral': function(){
+                    var properties = node.properties ?
+                            node.properties.length ?
+                                node.properties.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, '{'
+                            +(properties.length ? 
+                                nli(il+1)
+                                +properties.join(','+nli(il+1)) 
+                                +nli(il) : '')
+                            +'}');
+                },
+                'PropertyAssignment': function(){
+                    var value = node.value ?
+                            compile(il, node.type)(node.value)
+                            : 'undefined';
+                    return new Element(node.type, '\"' +node.name +'\":' +sp() +value);
+                },
+                'GetterDefinition': function(){
+                    var body = node.body ?
+                            node.body.length ?
+                                node.body.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 'get ' +node.name +'(){'
+                           +nli(il+1)
+                           +body.join(';'+nli(il+1))
+                           +nli(il)
+                           +'}');
+                },
+                'SetterDefinition': function(){
+                    var body = node.body ?
+                            node.body.length ?
+                                node.body.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 'set ' +node.name +'('
+                           +node.param
+                           +'){'
+                           +nli(il+1)
+                           +body.join(';'+nli(il+1))
+                           +nli(il)
+                           +'}');
+                },
+                'NewOperator': function(){
+                    var constructor = node.constructor ?
+                            node.constructor.type ?
+                                compile(il+1, node.type)(node.constructor)
+                                : node.constructor
+                            : '',
+                        args = node.arguments ?
+                            node.arguments.length ?
+                                node.arguments.map(compile(il, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 'new ' +constructor +'('
+                           +args.join(',' +sp())
+                           +')');
+                },
+                'FunctionCallArguments': noop,
+                'PropertyAccessProperty': noop,
+                'PostfixExpression': function(){
+                   var expression = node.expression ?
+                            compile(il, node.type)(node.expression)
+                            : '';
+                   return new Element(node.type, expression +node.operator);
+                },
+                'UnaryExpression': function(){
+                   var expression = node.expression ?
+                            compile(il, node.type)(node.expression)
+                            : '';
+                   return new Element(node.type, node.operator +' ' +expression);
+                },
+                'ConditionalExpression': function(){
+                    var condition = node.condition ?
+                            node.condition.type ?
+                                compile(il, node.type)(node.condition) 
+                                : node.condition
+                            : '',
+                      trueExpression = node.trueExpression ? 
+                                node.trueExpression.type ?
+                                    compile(il+2, node.type)(node.trueExpression)
+                                    : node.trueExpression
+                                : '',
+                      falseExpression = node.falseExpression ? 
+                                node.falseExpression.type ?
+                                    compile(il+2, node.type)(node.falseExpression)
+                                    : node.falseExpression
+                                : '';
+                    return new Element(node.type, '(' +condition +sp() +'?'
+                           +nli(il+1) 
+                           +trueExpression
+                           +nli(il+1)
+                           +':' +sp() 
+                           +falseExpression +')');
+                },
+                'AssignmentExpression': function(){
+                    var left = node.left ?
+                            compile(il, node.type)(node.left) : 'undefined',
+                        right = node.right ?
+                            compile(il, node.type)(node.right) : 'undefined';
+                    return new Element(node.type, left 
+                           +sp() 
+                           +node.operator 
+                           +sp() 
+                           +(right.toString().indexOf('var') === 0 ?
+                                right.replace(/^var/,'')
+                                : right));
+                },
+                'Block': function(){
+                   var statements = node.statements ?
+                            node.statements.length ?
+                                node.statements.map(compile(il, node.type))
+                                : []
+                            : [];
+                   return new Element(node.type, statements.join(';'+nli(il))); 
+                },
+                'VariableStatement': function(){
+                    var declarations = node.declarations ?
+                        node.declarations.length ?
+                            node.declarations.map(compile(il, node.type))
                             : []
                         : [];
-               return statements.join(';'+nli(flags, il)); 
-            },
-            'VariableStatement': function(){
-                var declarations = node.declarations ?
-                    node.declarations.length ?
-                        node.declarations.map(compile(flags, il+1))
-                        : []
-                    : [];
-                return  'var ' 
-                        +declarations.join(','+nli(flags, il+1)); 
-            },
-            'VariableDeclaration': function(){
-                var value = node.value ?
-                        compile(flags, il)(node.value)
-                        : undefined;
-                return node.name +sp(flags) 
-                    +(value === undefined ?
-                        '' : '=' +sp(flags) +value);
-            },
-            'BinaryExpression': function(){
-                var left = node.left ?
-                        compile(flags, il)(node.left) : 'undefined',
-                    right = node.right ?
-                        compile(flags, il)(node.right) : 'undefined';
-                if (node.operator === ',')
-                    node.operator = ','+nli(flags, il);
-                else node.operator = sp(flags) +node.operator +sp(flags);
-                return left 
-                       +node.operator 
-                       +right;
-            },
-            'EmptyStatement': function(){
-                return '';
-            },
-            'IfStatement': function(){
-               var condition = node.condition ?
-                        compile(flags, il)(node.condition) : '',
-                  ifStatement = node.ifStatement ? 
-                        compile(flags, il+1)(node.ifStatement) : '',
-                  elseStatement = node.elseStatement ? 
-                        compile(flags, il+1)(node.elseStatement) : '';
-                return 'if (' +condition +'){'
-                       +nli(flags, il+1) 
-                       +ifStatement 
-                       +nli(flags, il)
-                       +'}' +(elseStatement ? 
-                        ' else {' 
-                        +nli(flags, il+1)
-                        +elseStatement 
-                        +nli(flags, il)
-                        +'}'
-                       : '');
-            },
-            'DoWhileStatement': function(){
-                var condition = node.condition ?
-                        compile(flags, il)(node.condition) : '',
-                    statement = node.statement ? 
-                        compile(flags, il+1)(node.statement) : '';
-                return 'do {'
-                        +nli(flags, il+1)
-                        +statement
-                        +nli(flags, il)
-                        +'} while('
-                        +condition
-                        +')';
-            },
-            'WhileStatement': function(){
-                var condition = node.condition ?
-                        compile(flags, il)(node.condition) : '',
-                    statement = node.statement ? 
-                        compile(flags, il+1)(node.statement) : '';
-                return 'while('
-                       +condition
-                       +')'
-                       +'{'
-                       +nli(flags, il+1)
-                       +statement
-                       +nli(flags, il)
-                       +'}';
-            },
-            'ForStatement': function(){
-               var initializer = node.initializer ?
-                        compile(flags, il)(node.initializer)
-                        : '',
-                   test = node.test ?
-                        compile(flags, il)(node.test)
-                        : '',
-                   counter= node.counter ?
-                        compile(flags, il)(node.counter)
-                        : '',
-                   statement = node.statement ?
-                        compile(flags, il+1)(node.statement)
-                        : '';
-                return 'for ('
-                        +initializer
-                        +';' +sp(flags)
-                        +test
-                        +';' +sp(flags)
-                        +counter
-                        +'){' 
-                        +nli(flags, il+1)
-                        +statement
-                        +nli(flags, il)
-                        +'}';
-            },
-            'ForInStatement': function(){
-               var iterator = node.iterator ?
-                        node.iterator.type ?
-                            compile(flags, il)(node.iterator)
-                            : node.iterator
-                        : '',
-                   collection = node.collection ?
-                        compile(flags, il)(node.collection)
-                        : '',
-                   statement = node.statement ?
-                        compile(flags, il+1)(node.statement)
-                        : '';
-                return 'for ('
-                        +iterator
-                        +' in '
-                        +collection
-                        +'){' 
-                        +nli(flags, il+1)
-                        +statement
-                        +nli(flags, il)
-                        +'}';
-            },
-            'ContinueStatement': function(){
-                return 'continue';
-            },
-            'BreakStatement': function(){
-                return 'break';
-             },
-            'ReturnStatement': function(){
-                var value = node.value ?
-                        node.value.type ?
-                            compile(flags, il)(node.value)
-                            : node.value
-                        : '';
-                return 'return' +(value ? ' ' : '') 
-                       +value 
-                       +';';
-            },
-            'WithStatement': function(){
-                var environment = node.environment ? compile(flags, il)(node.environment) : '',
-                    statement = node.statement ? compile(flags, il)(node.statement) : '';
-                return 'with' +sp(flags) + '(' + environment + '){' 
-                    +nli(flags, il) +statement +nli(flags, il)
-                    + '}';
-            },
-            'SwitchStatement': function(){
-                var expression = node.expression ?
-                        node.expression.type ?
-                            compile(flags, il)(node.expression)
-                            : node.expression
-                        : '',
-                    clauses = node.clauses ?
-                        node.clauses.length ?
-                            node.clauses.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return 'switch' +sp(flags) +'(' +expression +'){'
-                       +(clauses.length ?
-                           nli(flags, il+1)
-                           +clauses.join(nli(flags, il+1))
-                           +nli(flags, il) : '')
-                       +'}';
-            },
-            'CaseClause': function(){
-                var selector = node.selector ?
-                        node.selector.type ?
-                            compile(flags, il)(node.selector)
-                            : node.selector
-                        : '\"\"',
-                    statements = node.statements ?
-                        node.statements.length ?
-                            node.statements.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return 'case ' +selector +':'
-                        +(statements.length ?
-                            nli(flags, il+1)
-                            +statements.join(';'+nli(flags, il+1)) : '');
-            },
-            'DefaultClause': function(){
-                var statements = node.statements ?
-                        node.statements.length ?
-                            node.statements.map(compile(flags, il+1))
-                            : []
-                        : [];
-                return 'default:'
-                        +nli(flags, il+1)
-                        +statements.join(';'+nli(flags, il))
-                        +nli(flags, il);
-            },
-            'LabelledStatement': noop,
-            'ThrowStatement': function(){
-               var exception = node.exception ?
-                        node.exception.type ?
-                            compile(flags, il)(node.exception)
-                            : node.exception
-                        : '';
-               return 'throw ' +exception;
-            },
-            'TryStatement': function(){
-               var block = node.block ?
-                        compile(flags, il+1)(node.block)
-                        : '',
-                   _catch = node.catch ?
-                        compile(flags, il+1)(node.catch)
-                        : '',
-                   _finally = node.finally ?
-                        compile(flags, il+1)(node.finally)
-                        : '';
-                return 'try' +sp(flags) +'{'
-                        +nli(flags, il+1)
-                        +block
-                        +nli(flags, il)
-                        +'}' 
-                        +(_catch && _catch )
-                        +(_finally && _finally );
-            },
-            'Catch': function(){
-                var block = node.block ?
+                    var statement = (par !== 'ReturnStatement' ? 'var ' : '');
+                    return new Element(node.type, statement+declarations.join(';'+nli(il)+statement)); 
+                },
+                'VariableDeclaration': function(){
+                    var value = node.value ?
+                            compile(il, node.type)(node.value)
+                            : undefined;
+                    return new Element(node.type, node.name +sp() 
+                        +(value === undefined ?
+                            '' : '=' +sp() +value));
+                },
+                'BinaryExpression': function(){
+                    var left = node.left ?
+                            compile(il, node.type)(node.left) : 'undefined',
+                        right = node.right ?
+                            compile(il, node.type)(node.right) : 'undefined';
+                    if (node.operator === ',')
+                        node.operator = ','+nli(il);
+                    else node.operator = sp() +node.operator +sp();
+                    return new Element(node.type, left 
+                           +node.operator 
+                           +right);
+                },
+                'EmptyStatement': function(){
+                    return new Element(node.type, '');
+                },
+                'IfStatement': function(){
+                   var condition = node.condition ?
+                            compile(il, node.type)(node.condition) : '',
+                      ifStatement = node.ifStatement ? 
+                            compile(il+1, node.type)(node.ifStatement) : '',
+                      elseStatement = node.elseStatement ? 
+                            compile(il+1, node.type)(node.elseStatement) : '';
+                    return new Element(node.type, inl(il) +'if (' +condition +'){'
+                           +nli(il+1) 
+                           +ifStatement 
+                           +nli(il)
+                           +'}' +(elseStatement ? 
+                            ' else {' 
+                            +nli(il+1)
+                            +elseStatement 
+                            +nli(il)
+                            +'}'
+                           : ''));
+                },
+                'DoWhileStatement': function(){
+                    var condition = node.condition ?
+                            compile(il, node.type)(node.condition) : '',
+                        statement = node.statement ? 
+                            compile(il+1, node.type)(node.statement) : '';
+                    return new Element(node.type, inl(il) +'do {'
+                            +nli(il+1)
+                            +statement
+                            +nli(il)
+                            +'} while('
+                            +condition
+                            +')');
+                },
+                'WhileStatement': function(){
+                    var condition = node.condition ?
+                            compile(il, node.type)(node.condition) : '',
+                        statement = node.statement ? 
+                            compile(il+1, node.type)(node.statement) : '';
+                    return new Element(node.type, inl(il) +'while('
+                           +condition
+                           +')'
+                           +'{'
+                           +nli(il+1)
+                           +statement
+                           +nli(il)
+                           +'}');
+                },
+                'ForStatement': function(){
+                   var initializer = node.initializer ?
+                            compile(il, node.type)(node.initializer)
+                            : '',
+                       test = node.test ?
+                            compile(il, node.type)(node.test)
+                            : '',
+                       counter= node.counter ?
+                            compile(il, node.type)(node.counter)
+                            : '',
+                       statement = node.statement ?
+                            compile(il+1, node.type)(node.statement)
+                            : '';
+                    return new Element(node.type, inl(il) +'for ('
+                            +initializer
+                            +';' +sp()
+                            +test
+                            +';' +sp()
+                            +counter
+                            +'){' 
+                            +nli(il+1)
+                            +statement
+                            +nli(il)
+                            +'}');
+                },
+                'ForInStatement': function(){
+                   var iterator = node.iterator ?
+                            node.iterator.type ?
+                                compile(il, node.type)(node.iterator)
+                                : node.iterator
+                            : '',
+                       collection = node.collection ?
+                            compile(il, node.type)(node.collection)
+                            : '',
+                       statement = node.statement ?
+                            compile(il+1, node.type)(node.statement)
+                            : '';
+                    return new Element(node.type, inl(il) +'for ('
+                            +iterator
+                            +' in '
+                            +collection
+                            +'){' 
+                            +nli(il+1)
+                            +statement
+                            +nli(il)
+                            +'}');
+                },
+                'ContinueStatement': function(){
+                    return new Element(node.type, 'continue');
+                },
+                'BreakStatement': function(){
+                    return new Element(node.type, 'break');
+                 },
+                'ReturnStatement': function(){
+                    var value = node.value ?
+                            node.value.type ?
+                                compile(il, node.type)(node.value)
+                                : node.value
+                            : '';
+                    return new Element(node.type, 'return' +(value ? ' ' : '') 
+                           +value 
+                           +';');
+                },
+                'WithStatement': function(){
+                    var environment = node.environment ? compile(il, node.type)(node.environment) : '',
+                        statement = node.statement ? compile(il, node.type)(node.statement) : '';
+                    return new Element(node.type, inl(il) +'with' +sp() + '(' + environment + '){' 
+                        +nli(il) +statement +nli(il)
+                        + '}');
+                },
+                'SwitchStatement': function(){
+                    var expression = node.expression ?
+                            node.expression.type ?
+                                compile(il, node.type)(node.expression)
+                                : node.expression
+                            : '',
+                        clauses = node.clauses ?
+                            node.clauses.length ?
+                                node.clauses.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, inl(il) +'switch' +sp() +'(' +expression +'){'
+                           +(clauses.length ?
+                               nli(il+1)
+                               +clauses.join(nli(il+1))
+                               +nli(il) : '')
+                           +'}');
+                },
+                'CaseClause': function(){
+                    var selector = node.selector ?
+                            node.selector.type ?
+                                compile(il, node.type)(node.selector)
+                                : node.selector
+                            : '\"\"',
+                        statements = node.statements ?
+                            node.statements.length ?
+                                node.statements.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 'case ' +selector +':'
+                            +(statements.length ?
+                                nli(il+1)
+                                +statements.join(';'+nli(il+1)) : ''));
+                },
+                'DefaultClause': function(){
+                    var statements = node.statements ?
+                            node.statements.length ?
+                                node.statements.map(compile(il+1, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 'default:'
+                            +nli(il+1)
+                            +statements.join(';'+nli(il))
+                            +nli(il));
+                },
+                'LabelledStatement': noop,
+                'ThrowStatement': function(){
+                   var exception = node.exception ?
+                            node.exception.type ?
+                                compile(il, node.type)(node.exception)
+                                : node.exception
+                            : '';
+                   return new Element(node.type, 'throw ' +exception);
+                },
+                'TryStatement': function(){
+                   var block = node.block ?
+                            compile(il+1, node.type)(node.block)
+                            : '',
+                       _catch = node.catch ?
+                            compile(il+1, node.type)(node.catch)
+                            : '',
+                       _finally = node.finally ?
+                            compile(il+1, node.type)(node.finally)
+                            : '';
+                    return new Element(node.type, inl(il) +'try' +sp() +'{'
+                            +nli(il+1)
+                            +block
+                            +nli(il)
+                            +'}' 
+                            +(_catch && _catch )
+                            +(_finally && _finally ));
+                },
+                'Catch': function(){
+                    var block = node.block ?
+                            node.block.type ?
+                                compile(il+1, node.type)(node.block)
+                                : node.block
+                            : '';
+                    return new Element(node.type, sp() +'catch' +sp() +'('
+                           +(node.identifier ? 
+                                node.identifier
+                                : '')
+                           +'){'
+                           +nli(il+1)
+                           +block
+                           +nli(il)
+                           +'}');
+                },
+                'Finally': function(){
+                    var block = node.block ?
                         node.block.type ?
-                            compile(flags, il+1)(node.block)
+                            compile(il+1, node.type)(node.block)
                             : node.block
                         : '';
-                return sp(flags) +'catch' +sp(flags) +'('
-                       +(node.identifier ? 
-                            node.identifier
-                            : '')
-                       +'){'
-                       +nli(flags, il+1)
-                       +block
-                       +nli(flags, il)
-                       +'}';
-            },
-            'Finally': function(){
-                var block = node.block ?
-                    node.block.type ?
-                        compile(flags, il+1)(node.block)
-                        : node.block
-                    : '';
-                return 'finally' +sp(flags)
-                       +'{'
-                       +nli(flags, il+1)
-                       +block
-                       +nli(flags, il)
-                       +'}';
-            },
-            'DebuggerStatement': noop,
-            'Program': function(){
-                var elements = node.elements ?
-                        node.elements.length ?
-                            node.elements.map(compile(flags, il)) 
-                            : []
-                        : [];
-                return elements.join(';'+nli(flags, il))
-                       +';'
-                       +nli(flags, il);
-            }
-            
+                    return new Element(node.type, 'finally' +sp()
+                           +'{'
+                           +nli(il+1)
+                           +block
+                           +nli(il)
+                           +'}');
+                },
+                'DebuggerStatement': function(){
+                    return new Element(node.type, 'debug');
+                },
+                'Program': function(){
+                    var elements = node.elements ?
+                            node.elements.length ?
+                                node.elements.map(compile(il, node.type))
+                                : []
+                            : [];
+                    return new Element(node.type, 
+                        elements.join(';'+nli(il))) +';';
+                }
+                
+            };
+            if (node.type in rules) 
+                return rules[node.type]();
+            else console.log('missed',node.type);
         };
-        if (node.type in rules) 
-            return rules[node.type]();
-        else console.log('missed',node.type);
-    };
+    })(0)(ast).toString();
 };
 

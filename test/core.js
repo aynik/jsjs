@@ -13,9 +13,9 @@ var testOut = function(t, success){
 test("Should run all tests", function(t){ 
     t.test("sx --tab", function(t){
         t.plan(3);
-        exec('echo "var b={a:1};" > tmp; ./bin/jsjs --tab " " tmp; rm tmp', 
+        exec('echo "var b={a:1};" > tmp; ./bin/jsjs --tab 1 tmp; rm tmp', 
             testOut(t, function(stdout){
-                t.same('var b = {\n "a": 1\n };\n', stdout);
+                t.same('var b = {\n "a": 1\n};', stdout);
             }));
     });
 
