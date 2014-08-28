@@ -1,6 +1,5 @@
 // Export reader
-exports.read = function(input, opts){
-    opts = opts || {};
+exports.read = function(opts, input){
     return compile(opts, parse(input));
 };
 
@@ -8,16 +7,16 @@ exports.read = function(input, opts){
 var parse = exports.parse = require('./parser').parse;
 
 // Export compiler
-var compile = exports.compile = function(flags, ast){
-    flags = flags || {};
-    flags.tab = flags.tab || -1;
-    var tab = (new Array(parseInt(flags.tab === -1 ? 0 : flags.tab, 10)+1)).join(' ');
+var compile = exports.compile = function(opts, ast){
+    opts = opts || {};
+    opts.tab = opts.tab || -1;
+    var tab = (new Array(parseInt(opts.tab === -1 ? 0 : opts.tab, 10)+1)).join(' ');
     var ind = function(il){
-        if (!flags.tab) return '';
+        if (!opts.tab) return '';
         else return (new Array(il+1)).join(tab);
     };
     var nli = function(il){
-        if (flags.tab === -1) return '';
+        if (opts.tab === -1) return '';
         else return '\n' +ind(il);
     };
     var inl = function(il){
@@ -25,7 +24,7 @@ var compile = exports.compile = function(flags, ast){
         else return '';
     };
     var sp = function(){
-        if (flags.compress) return '';
+        if (opts.compress) return '';
         else return ' ';
     }; 
     var noop = function(){ return '' };
@@ -120,7 +119,7 @@ var compile = exports.compile = function(flags, ast){
                     return new Element(node.type, node.value); 
                 },
                 'RegularExpressionLiteral': function(){
-                    return new Element(node.type, '/' +node.body +'/' +node.flags);
+                    return new Element(node.type, '/' +node.body +'/' +node.opts);
                 },
                 'This': function(){
                     return new Element(node.type, 'this');

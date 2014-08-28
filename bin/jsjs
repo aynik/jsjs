@@ -16,6 +16,6 @@ program.args.map(function(src){
            source = source.substr(
                source.indexOf('\n')+1, source.length);
        }
-       console.log(require('../').read(source, program));
+       console.log(require('../').read(program, source));
    });
 });
