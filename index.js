@@ -288,22 +288,26 @@ var compile = exports.compile = function(opts, ast){
                     return new Element(node.type, '');
                 },
                 'IfStatement': function(){
+                   var elseIf = node.elseStatement
+                      && node.elseStatement.type === 'IfStatement';
                    var condition = node.condition ?
                             compile(il, node.type)(node.condition) : '',
                       ifStatement = node.ifStatement ? 
                             compile(il+1, node.type)(node.ifStatement) : '',
                       elseStatement = node.elseStatement ? 
-                            compile(il+1, node.type)(node.elseStatement) : '';
-                    return new Element(node.type, inl(il) +'if (' +condition +'){'
+                            compile(il +(!elseIf ? 1 : 0), 
+                                node.type)(node.elseStatement) : '';
+                    return new Element(node.type, (par !== 'IfStatement' ? inl(il) : '') 
+                            +'if (' +condition +'){'
                            +nli(il+1) 
                            +ifStatement 
                            +nli(il)
                            +'}' +(elseStatement ? 
-                            ' else {' 
-                            +nli(il+1)
+                            ' else ' +(node.elseStatement.length ? '{' : '')
+                            +(elseIf || node.elseStatement.type ? '' : nli(il+1))
                             +elseStatement 
-                            +nli(il)
-                            +'}'
+                            +(node.elseStatement.length ? nli(il) : '')
+                            +(node.elseStatement.length ? '}' : '')
                            : ''));
                 },
                 'DoWhileStatement': function(){
@@ -392,9 +396,7 @@ var compile = exports.compile = function(opts, ast){
                                 compile(il, node.type)(node.value)
                                 : node.value
                             : '';
-                    return new Element(node.type, 'return' +(value ? ' ' : '') 
-                           +value 
-                           +';');
+                    return new Element(node.type, 'return' +(value ? ' ' : '') +value);
                 },
                 'WithStatement': function(){
                     var environment = node.environment ? compile(il, node.type)(node.environment) : '',
