@@ -40,7 +40,7 @@ Indents code with `number of spaces` for each indentation level.
 ---
 
 <a name="compress" />
-### sx --compress | -c
+### jsjs --compress | -c
 
 Removes optional whitespace between statements and declarations.
 
