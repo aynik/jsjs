@@ -4,7 +4,7 @@ var fs = require('fs');
 var program = require('commander')
   .version(require('../package').version)
   .usage('[options] file [..files]')
-  .option('-t, --tab [prefix]', 'tabulate output with selected prefix')
+  .option('-t, --tab [number of spaces]', 'tabulate output with selected number of spaces')
   .option('-c, --compress', 'drop unnecessary white space')
   .parse(process.argv);
 

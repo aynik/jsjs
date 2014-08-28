@@ -25,24 +25,24 @@ $ jsjs [options] <file> [...<files>]
 
 ### Options
 
-* [`--format, -f [prefix]`](#format)
-* [`--squeeze, -s`](#squeeze)
+* [`--tab, -t [number of spaces]`](#tab)
+* [`--compress, -c`](#compress)
 
 ---
 
 ## Options
 
-<a name="format" />
-### jsjs --format [prefix] | -f [prefix]
+<a name="tab" />
+### jsjs --tab [number of spaces] | -t [number of spaces]
 
-Indents code using `prefix` string as the minimum unit.
+Indents code with `number of spaces` for each indentation level.
 
 ---
 
-<a name="squeeze" />
-### sx --squeeze | -s
+<a name="compress" />
+### sx --compress | -c
 
-Squeezes optional whitespace between statements and declarations.
+Removes optional whitespace between statements and declarations.
 
 ---
 
