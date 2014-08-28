@@ -243,7 +243,7 @@ var compile = exports.compile = function(opts, ast){
                            +sp() 
                            +node.operator 
                            +sp() 
-                           +(right.toString().indexOf('var') === 0 ?
+                           +(String(right.toString()).indexOf('var') === 0 ?
                                 right.replace(/^var/,'')
                                 : right));
                 },
