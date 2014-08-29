@@ -1128,14 +1128,14 @@ Statement
   / BreakStatement
   / ReturnStatement
   / WithStatement
-  / LabelledStatement
   / SwitchStatement
   / ThrowStatement
   / TryStatement
+  / PrimaryExpression
+  / LabelledStatement
   / DebuggerStatement
   / FunctionDeclaration
   / FunctionExpression
-  / PrimaryExpression
 
 Block
   = "{" __ statements:(StatementList __)? "}" {

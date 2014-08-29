@@ -12687,35 +12687,35 @@ module.exports = (function(){
                           if (result9 !== null) {
                             var result0 = result9;
                           } else {
-                            var result8 = parse_LabelledStatement();
+                            var result8 = parse_SwitchStatement();
                             if (result8 !== null) {
                               var result0 = result8;
                             } else {
-                              var result7 = parse_SwitchStatement();
+                              var result7 = parse_ThrowStatement();
                               if (result7 !== null) {
                                 var result0 = result7;
                               } else {
-                                var result6 = parse_ThrowStatement();
+                                var result6 = parse_TryStatement();
                                 if (result6 !== null) {
                                   var result0 = result6;
                                 } else {
-                                  var result5 = parse_TryStatement();
+                                  var result5 = parse_PrimaryExpression();
                                   if (result5 !== null) {
                                     var result0 = result5;
                                   } else {
-                                    var result4 = parse_DebuggerStatement();
+                                    var result4 = parse_LabelledStatement();
                                     if (result4 !== null) {
                                       var result0 = result4;
                                     } else {
-                                      var result3 = parse_FunctionDeclaration();
+                                      var result3 = parse_DebuggerStatement();
                                       if (result3 !== null) {
                                         var result0 = result3;
                                       } else {
-                                        var result2 = parse_FunctionExpression();
+                                        var result2 = parse_FunctionDeclaration();
                                         if (result2 !== null) {
                                           var result0 = result2;
                                         } else {
-                                          var result1 = parse_PrimaryExpression();
+                                          var result1 = parse_FunctionExpression();
                                           if (result1 !== null) {
                                             var result0 = result1;
                                           } else {
