@@ -77,11 +77,11 @@ var compile = exports.compile = function(opts, ast) {
         return function(node) {
             var rules = {
                 "Function": function() {
-                    return new Element(node.type, format(il, '{initial}function{name}({args}){sp}{{nli1}{elements}}', {
+                    return new Element(node.type, format(il, '{initial}function{name}({args}){sp}{{elements}}', {
                         "initial": (!(par in inlineElements) ? inl(il) : ''),
                         "name": (node.name ? ' ' + node.name : ''),
                         "args": (node.params && node.params.length ? node.params.join(',' + sp()) : ''),
-                        "elements": (node.elements ? (node.elements.length ? node.elements.map(compile(il + 1, node.type)) : []) : []).reduce(ej(nli(il + 1), nli(il)), '')
+                        "elements": (node.elements && node.elements.length ? nli(il + 1) + node.elements.map(compile(il + 1, node.type)).reduce(ej(nli(il + 1), nli(il)), '') : '')
                     }))
                 },
                 "FunctionCall": function() {
