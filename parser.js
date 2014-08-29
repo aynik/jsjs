@@ -6591,7 +6591,12 @@ module.exports = (function(){
                     pos = savedPos1;
                   }
                   var result3 = result2 !== null
-                    ? (function(expression) { return expression; })(result2[2])
+                    ? (function(expression) { 
+                          return {
+                              type:       "GroupedExpression",
+                              expression: expression
+                          }; 
+                      })(result2[2])
                     : null;
                   if (result3 !== null) {
                     var result1 = result3;

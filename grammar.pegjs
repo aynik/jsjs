@@ -482,8 +482,13 @@ PrimaryExpression
   / name:Identifier { return { type: "Variable", name: name }; }
   / Literal
   / ArrayLiteral
-  / ObjectLiteral
-  / "(" __ expression:Expression __ ")" { return expression; }
+  / ObjectLiteral 
+  / "(" __ expression:Expression __ ")" { 
+      return {
+          type:       "GroupedExpression",
+          expression: expression
+      }; 
+  }
 
 ArrayLiteral
   = "[" __ elements:ElementList? __ (Elision __)? "]" {
