@@ -1123,6 +1123,7 @@ Statement
   / BreakStatement
   / ReturnStatement
   / WithStatement
+  / LabelledStatement
   / SwitchStatement
   / ThrowStatement
   / TryStatement
@@ -1334,6 +1335,11 @@ WithStatement
         environment: environment,
         statement:   statement
       };
+    }
+
+LabelledStatement
+  = label:Identifier __ ":" __ statement:Statement {
+      return { type: "LabelledStatement", label: label, statement: statement };
     }
 
 SwitchStatement

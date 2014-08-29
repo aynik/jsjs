@@ -103,6 +103,7 @@ module.exports = (function(){
         "InstanceofToken": parse_InstanceofToken,
         "IterationStatement": parse_IterationStatement,
         "Keyword": parse_Keyword,
+        "LabelledStatement": parse_LabelledStatement,
         "LeftHandSideExpression": parse_LeftHandSideExpression,
         "LineContinuation": parse_LineContinuation,
         "LineTerminator": parse_LineTerminator,
@@ -12641,75 +12642,80 @@ module.exports = (function(){
         }
         
         
-        var result17 = parse_Block();
-        if (result17 !== null) {
-          var result0 = result17;
+        var result18 = parse_Block();
+        if (result18 !== null) {
+          var result0 = result18;
         } else {
-          var result16 = parse_VariableStatement();
-          if (result16 !== null) {
-            var result0 = result16;
+          var result17 = parse_VariableStatement();
+          if (result17 !== null) {
+            var result0 = result17;
           } else {
-            var result15 = parse_EmptyStatement();
-            if (result15 !== null) {
-              var result0 = result15;
+            var result16 = parse_EmptyStatement();
+            if (result16 !== null) {
+              var result0 = result16;
             } else {
-              var result14 = parse_ExpressionStatement();
-              if (result14 !== null) {
-                var result0 = result14;
+              var result15 = parse_ExpressionStatement();
+              if (result15 !== null) {
+                var result0 = result15;
               } else {
-                var result13 = parse_IfStatement();
-                if (result13 !== null) {
-                  var result0 = result13;
+                var result14 = parse_IfStatement();
+                if (result14 !== null) {
+                  var result0 = result14;
                 } else {
-                  var result12 = parse_IterationStatement();
-                  if (result12 !== null) {
-                    var result0 = result12;
+                  var result13 = parse_IterationStatement();
+                  if (result13 !== null) {
+                    var result0 = result13;
                   } else {
-                    var result11 = parse_ContinueStatement();
-                    if (result11 !== null) {
-                      var result0 = result11;
+                    var result12 = parse_ContinueStatement();
+                    if (result12 !== null) {
+                      var result0 = result12;
                     } else {
-                      var result10 = parse_BreakStatement();
-                      if (result10 !== null) {
-                        var result0 = result10;
+                      var result11 = parse_BreakStatement();
+                      if (result11 !== null) {
+                        var result0 = result11;
                       } else {
-                        var result9 = parse_ReturnStatement();
-                        if (result9 !== null) {
-                          var result0 = result9;
+                        var result10 = parse_ReturnStatement();
+                        if (result10 !== null) {
+                          var result0 = result10;
                         } else {
-                          var result8 = parse_WithStatement();
-                          if (result8 !== null) {
-                            var result0 = result8;
+                          var result9 = parse_WithStatement();
+                          if (result9 !== null) {
+                            var result0 = result9;
                           } else {
-                            var result7 = parse_SwitchStatement();
-                            if (result7 !== null) {
-                              var result0 = result7;
+                            var result8 = parse_LabelledStatement();
+                            if (result8 !== null) {
+                              var result0 = result8;
                             } else {
-                              var result6 = parse_ThrowStatement();
-                              if (result6 !== null) {
-                                var result0 = result6;
+                              var result7 = parse_SwitchStatement();
+                              if (result7 !== null) {
+                                var result0 = result7;
                               } else {
-                                var result5 = parse_TryStatement();
-                                if (result5 !== null) {
-                                  var result0 = result5;
+                                var result6 = parse_ThrowStatement();
+                                if (result6 !== null) {
+                                  var result0 = result6;
                                 } else {
-                                  var result4 = parse_DebuggerStatement();
-                                  if (result4 !== null) {
-                                    var result0 = result4;
+                                  var result5 = parse_TryStatement();
+                                  if (result5 !== null) {
+                                    var result0 = result5;
                                   } else {
-                                    var result3 = parse_FunctionDeclaration();
-                                    if (result3 !== null) {
-                                      var result0 = result3;
+                                    var result4 = parse_DebuggerStatement();
+                                    if (result4 !== null) {
+                                      var result0 = result4;
                                     } else {
-                                      var result2 = parse_FunctionExpression();
-                                      if (result2 !== null) {
-                                        var result0 = result2;
+                                      var result3 = parse_FunctionDeclaration();
+                                      if (result3 !== null) {
+                                        var result0 = result3;
                                       } else {
-                                        var result1 = parse_PrimaryExpression();
-                                        if (result1 !== null) {
-                                          var result0 = result1;
+                                        var result2 = parse_FunctionExpression();
+                                        if (result2 !== null) {
+                                          var result0 = result2;
                                         } else {
-                                          var result0 = null;;
+                                          var result1 = parse_PrimaryExpression();
+                                          if (result1 !== null) {
+                                            var result0 = result1;
+                                          } else {
+                                            var result0 = null;;
+                                          };
                                         };
                                       };
                                     };
@@ -14785,6 +14791,77 @@ module.exports = (function(){
                   statement:   statement
                 };
               })(result1[4], result1[8])
+          : null;
+        if (result2 !== null) {
+          var result0 = result2;
+        } else {
+          var result0 = null;
+          pos = savedPos0;
+        }
+        
+        
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_LabelledStatement() {
+        var cacheKey = 'LabelledStatement@' + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        
+        var savedPos0 = pos;
+        var savedPos1 = pos;
+        var result3 = parse_Identifier();
+        if (result3 !== null) {
+          var result4 = parse___();
+          if (result4 !== null) {
+            if (input.substr(pos, 1) === ":") {
+              var result5 = ":";
+              pos += 1;
+            } else {
+              var result5 = null;
+              if (reportMatchFailures) {
+                matchFailed("\":\"");
+              }
+            }
+            if (result5 !== null) {
+              var result6 = parse___();
+              if (result6 !== null) {
+                var result7 = parse_Statement();
+                if (result7 !== null) {
+                  var result1 = [result3, result4, result5, result6, result7];
+                } else {
+                  var result1 = null;
+                  pos = savedPos1;
+                }
+              } else {
+                var result1 = null;
+                pos = savedPos1;
+              }
+            } else {
+              var result1 = null;
+              pos = savedPos1;
+            }
+          } else {
+            var result1 = null;
+            pos = savedPos1;
+          }
+        } else {
+          var result1 = null;
+          pos = savedPos1;
+        }
+        var result2 = result1 !== null
+          ? (function(label, statement) {
+                return { type: "LabelledStatement", label: label, statement: statement };
+              })(result1[0], result1[4])
           : null;
         if (result2 !== null) {
           var result0 = result2;
