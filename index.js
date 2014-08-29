@@ -7,6 +7,7 @@ var compile = exports.compile = function(opts, ast) {
     opts.tab = opts.tab || -1;
     var tab = new Array(parseInt((opts.tab === -1 ? 0 : opts.tab), 10) + 1).join(' ');
     var inlineElements = {
+        "GroupedExpression": 0,
         "AssignmentExpression": 0,
         "FunctionCall": 0,
         "VariableDeclaration": 0,
