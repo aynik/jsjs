@@ -1,11 +1,10 @@
-var be = require('be-async');
-exports.read = function (opts, input, next) {
-    return compile(opts, parse(opts, input), next)
+exports.read = function (opts, input) {
+    return compile(opts, parse(opts, input))
 };
 var parse = exports.parse = function (opts, input) {
     return require('./parsers/' + opts.language).parse(input)
 };
-var compile = exports.compile = function (opts, ast, next) {
+var compile = exports.compile = function (opts, ast) {
     opts = opts || {};
     opts.tab = opts.tab || -1;
     var tab = new Array(parseInt((opts.tab === -1 ? 0 : opts.tab), 10) + 1).join(' ');
@@ -66,10 +65,14 @@ var compile = exports.compile = function (opts, ast, next) {
             return typeof dict[k] !== 'undefined' ? dict[k] : m
         })
     };
+    var noop = function () {
+        return ''
+    };
     var Element = function (type, code) {
         if (!(this instanceof Element)) {
             return new Element(type, code)
         } else {
+            
             this.type = type;
             this.code = code
         }
@@ -79,453 +82,304 @@ var compile = exports.compile = function (opts, ast, next) {
     };
     return function compile (il, par) {
         il = il || 0;
-        return function (node, next) {
-            var noop = function () {
-                next(null, '')
-            };
+        return function (node) {
             var rules = {
                 "Function": function () {
-                    be.map(node.elements, compile(il + 1, node.type), function (err, elements) {
-                        next(err, Element(node.type, tmpl(il, '{initial}function{name}({params}){sp}{{elements}}', {
-                            "initial": (!(par in inlineElements) ? inl(il) : ''),
-                            "name": node.name ? ' ' + node.name + sp() : sp(),
-                            "params": node.params.join(',' + sp()),
-                            "elements": elements.length ? tmpl(il, '{nli1}{elements}', {
-                                    "elements": elements.reduce(ej(nli(il + 1), nli(il)), '')
-                                }) : ''
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}function{name}({params}){sp}{{elements}}', {
+                        "initial": (!(par in inlineElements) ? inl(il) : ''),
+                        "name": node.name ? ' ' + node.name + sp() : sp(),
+                        "params": node.params.join(',' + sp()),
+                        "elements": (node.elements && node.elements.length ? nli(il + 1) + node.elements.map(compile(il + 1, node.type)).reduce(ej(nli(il + 1), nli(il)), '') : '')
+                    }))
                 },
                 "FunctionCall": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.name, next)
-                    }, function (name, next) {
-                        be.map(node.arguments, compile(il, node.type), be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, name, args) {
-                        next(err, Element(node.type, tmpl(il, '{initial}{name}({args})', {
-                            "initial": (!(par in inlineElements) ? inl(il) : ''),
-                            "name": name,
-                            "args": args.join(',' + sp())
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}{name}({args})', {
+                        "initial": (!(par in inlineElements) ? inl(il) : ''),
+                        "name": compile(il, node.type)(node.name),
+                        "args": (node.arguments || []).map(compile(il, node.type)).join(',' + sp())
+                    }))
                 },
                 "PropertyAccess": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.base, next)
-                    }, function (base, next) {
-                        compile(il, node.type)(node.name, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, base, name) {
-                        next(err, Element(node.type, tmpl(il, (node.name.type in bracketAccess ? '{base}[{name}]' : '{base}.{name}'), {
-                            "base": base,
-                            "name": name
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, (node.name.type in bracketAccess ? '{base}[{name}]' : '{base}.{name}'), {
+                        "base": compile(il, node.type)(node.base),
+                        "name": compile(il, node.type)(node.name)
+                    }))
                 },
                 "Variable": function () {
-                    next(null, Element(node.type, node.name))
+                    return Element(node.type, compile(il, node.type)(node.name))
                 },
                 "NumericLiteral": function () {
-                    next(null, Element(node.type, node.value))
+                    return Element(node.type, node.value)
                 },
                 "StringLiteral": function () {
                     var replaces = [['\\\\', '\\\\'], ['\\n', '\\n'], ['\\r', '\\r']];
-                    next(null, Element(node.type, tmpl(il, '{quote}{str}{quote}', {
+                    return Element(node.type, tmpl(il, '{quote}{str}{quote}', {
                         "quote": (node.value.indexOf("'") > -1 ? '"' : "'"),
                         "str": replaces.reduce(function (str, rep) {
                             return str.replace(new RegExp(rep[0], 'g'), rep[1])
                         }, node.value || '')
-                    })))
+                    }))
                 },
                 "NullLiteral": function () {
-                    next(null, Element(node.type, 'null'))
+                    return Element(node.type, 'null')
                 },
                 "BooleanLiteral": function () {
-                    next(null, Element(node.type, node.value))
+                    return Element(node.type, node.value)
                 },
                 "RegularExpressionLiteral": function () {
-                    next(null, Element(node.type, tmpl(il, '/{elements}/{flags}', {
-                        "elements": node.elements,
+                    return Element(node.type, tmpl(il, '/{body}/{flags}', {
+                        "body": node.elements,
                         "flags": (node.flags ? node.flags : '')
-                    })))
+                    }))
                 },
                 "This": function () {
-                    next(null, Element(node.type, 'this'))
+                    return Element(node.type, 'this')
                 },
                 "ArrayLiteral": function () {
-                    be.map(node.elements, compile(il, node.type), function (err, elements) {
-                        next(err, Element(node.type, tmpl(il, '[{elements}]', {
-                            "elements": elements.join(',' + sp())
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '[{elements}]', {
+                        "elements": (node.elements || []).map(compile(il + 1, node.type)).join(',' + sp())
+                    }))
                 },
                 "ObjectLiteral": function () {
-                    be.map(node.properties, compile(il + 1, node.type), function (err, properties) {
-                        next(err, Element(node.type, tmpl(il, '{{properties}}', {
-                            "properties": properties.length ? tmpl(il, '{nli1}{properties}{nli}', {
-                                    "properties": properties.join(',' + nli(il + 1))
-                                }) : ''
-                        })))
-                    })
-                },
-                "ExpressionStatement": function () {
-                    compile(il, node.type)(node.expression, function (err, expression) {
-                        next(err, Element(node.type, expression))
-                    })
+                    return Element(node.type, tmpl(il, '{{properties}}', {
+                        "properties": node.properties.length ? tmpl(il, '{nli1}{properties}{nli}', {
+                                "properties": (node.properties || []).map(compile(il + 1, node.type)).join(',' + nli(il + 1))
+                            }) : ''
+                    }))
                 },
                 "GroupedExpression": function () {
-                    compile(il, node.type)(node.expression, function (err, expression) {
-                        next(err, Element(node.type, tmpl(il, '({expression})', {
-                            "expression": expression
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '({expression})', {
+                        "expression": compile(il, node.type)(node.expression)
+                    }))
                 },
                 "PropertyAssignment": function () {
-                    compile(il, node.type)(node.value, function (err, value) {
-                        next(err, Element(node.type, tmpl(il, '"{name}":{sp}{value}', {
-                            "name": node.name,
-                            "value": value
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '"{name}":{sp}{value}', {
+                        "name": node.name,
+                        "value": compile(il, node.type)(node.value)
+                    }))
                 },
                 "GetterDefinition": function () {
-                    be.map(node.elements, compile(il + 1, node.type), function (err, elements) {
-                        next(err, Element(node.type, tmpl(il, 'get {name}{sp}(){sp}{{nli1}{elements}{nli}}', {
-                            "name": node.name,
-                            "elements": elements.reduce(ej(nli(il), ''), '')
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'get {name}{sp}(){sp}{{nli1}{body}{nli}}', {
+                        "name": node.name,
+                        "body": (node.body || []).map(compile(il + 1, node.type)).reduce(ej(nli(il), ''))
+                    }))
                 },
                 "SetterDefinition": function () {
-                    be.map(node.elements, compile(il + 1, node.type), function (err, elements) {
-                        next(err, Element(node.type, tmpl(il, 'set {name}{sp}({param}){sp}{{nli1}{elements}{nli}}', {
-                            "name": node.name,
-                            "param": node.param,
-                            "elements": elements.reduce(ej(nli(il), ''), '')
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'set {name}{sp}({param}){sp}{{nli1}{body}{nli}}', {
+                        "name": node.name,
+                        "param": node.param,
+                        "body": (node.body || []).map(compile(il + 1, node.type)).reduce(ej(nli(il), ''))
+                    }))
                 },
                 "NewOperator": function () {
-                    be.waterfall([function (next) {
-                        compile(il + 1, node.type)(node.constructor, next)
-                    }, function (condition, next) {
-                        be.map(node.arguments, compile(il, node.type), be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, constructor, args) {
-                        next(err, Element(node.type, tmpl(il, 'new {constructor}({args})', {
-                            "constructor": constructor,
-                            "args": args.join(',' + sp())
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'new {constructor}({args})', {
+                        "constructor": compile(il + 1, node.type)(node.constructor),
+                        "args": (node.arguments || []).map(compile(il, node.type)).join(',' + sp())
+                    }))
                 },
                 "FunctionCallArguments": noop,
                 "PropertyAccessProperty": noop,
                 "PostfixExpression": function () {
-                    compile(il, node.type)(node.expression, function (err, expression) {
-                        next(err, Element(node.type, tmpl(il, '{expression}{operator}', {
-                            "expression": expression,
-                            "operator": node.operator
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{expression}{operator}', {
+                        "expression": compile(il, node.type)(node.expression),
+                        "operator": node.operator
+                    }))
                 },
                 "UnaryExpression": function () {
-                    compile(il, node.type)(node.expression, function (err, expression) {
-                        next(err, Element(node.type, tmpl(il, '{operator}{expression}', {
-                            "operator": (node.operator.match(/\w+/) ? node.operator + ' ' : node.operator),
-                            "expression": expression
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{operator}{expression}', {
+                        "operator": (node.operator.match(/\w+/) ? node.operator + ' ' : node.operator),
+                        "expression": compile(il, node.type)(node.expression)
+                    }))
                 },
                 "ConditionalExpression": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.condition, next)
-                    }, function (condition, next) {
-                        compile(il + 1, node.type)(node.trueExpression, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (condition, trueExpression, next) {
-                        compile(il + 1, node.type)(node.falseExpression, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, condition, trueExpression, falseExpression) {
-                        next(err, Element(node.type, tmpl(il, '{condition}{sp}?{sp}{trueExpression}{sp}:{sp}{falseExpression}', {
-                            "condition": condition,
-                            "trueExpression": trueExpression,
-                            "falseExpression": falseExpression
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{condition}{sp}?{sp}{trueExpression}{sp}:{sp}{falseExpression}', {
+                        "condition": compile(il, node.type)(node.condition),
+                        "trueExpression": compile(il + 1, node.type)(node.trueExpression),
+                        "falseExpression": compile(il + 1, node.type)(node.falseExpression)
+                    }))
                 },
                 "AssignmentExpression": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.left, next)
-                    }, function (left, next) {
-                        compile(il, node.type)(node.right, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, left, right) {
-                        next(err, Element(node.type, tmpl(il, '{left}{sp}{operator}{sp}{right}', {
-                            "left": left,
-                            "operator": node.operator,
-                            "right": right
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{left}{sp}{operator}{sp}{right}', {
+                        "left": compile(il, node.type)(node.left),
+                        "operator": node.operator,
+                        "right": compile(il, node.type)(node.right)
+                    }))
                 },
                 "Block": function () {
-                    be.map(node.elements, compile(il, node.type), function (err, elements) {
-                        next(err, Element(node.type, elements.reduce(ej(nli(il), ''), '')))
-                    })
+                    return Element(node.type, (node.elements || []).map(compile(il, node.type)).reduce(ej(nli(il), ''), ''))
                 },
                 "VariableStatement": function () {
-                    be.map(node.declarations, compile(il, node.type), function (err, declarations) {
-                        next(err, Element(node.type, tmpl(il, 'var {declarations}', {
-                            "declarations": declarations.join(';' + nli(il) + 'var ')
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'var {declarations}', {
+                        "declarations": (node.declarations || []).map(compile(il, node.type)).join(';' + nli(il) + 'var ')
+                    }))
                 },
                 "VariableDeclaration": function () {
-                    compile(il, node.type)(node.value, function (err, value) {
-                        next(err, Element(node.type, tmpl(il, '{name}{value}', {
-                            "name": node.name,
-                            "value": tmpl(il, '{sp}={sp}{value}', {
-                                "value": value
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{name}{value}', {
+                        "name": node.name,
+                        "value": node.value ? tmpl(il, '{sp}={sp}{value}', {
+                                "value": compile(il, node.type)(node.value)
+                            }) : ''
+                    }))
                 },
                 "BinaryExpression": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.left, next)
-                    }, function (left, next) {
-                        compile(il, node.type)(node.right, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, left, right) {
-                        next(err, Element(node.type, tmpl(il, '{left}{operator}{right}', {
-                            "left": left,
-                            "operator": tmpl(il, (node.operator === ',' ? '{operator}{nli}' : '{sp}{operator}{sp}'), {
-                                "operator": node.operator
-                            }),
-                            "right": right
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{left}{operator}{right}', {
+                        "left": compile(il, node.type)(node.left),
+                        "operator": tmpl(il, (node.operator === ',' ? '{operator}{nli}' : '{sp}{operator}{sp}'), {
+                            "operator": node.operator
+                        }),
+                        "right": compile(il, node.type)(node.right)
+                    }))
                 },
                 "EmptyStatement": function () {
-                    next(null, Element(node.type, ''))
+                    return Element(node.type, '')
                 },
                 "IfStatement": function () {
                     var ifStatementBlock = node.ifStatement && node.ifStatement.elements && node.ifStatement.elements.length;
                     var elseStatementBlock = node.elseStatement && node.elseStatement.elements && node.elseStatement.elements.length;
                     var elseIf = node.elseStatement && node.elseStatement.type === 'IfStatement';
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.condition, next)
-                    }, function (condition, next) {
-                        compile(il, node.type)(node.ifStatement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (condition, ifStatement, next) {
-                        compile(il + (!elseIf ? 1 : 0), node.type)(node.elseStatement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, condition, ifStatement, elseStatement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}if{sp}({condition}){ifStatement}{elseStatement}', {
-                            "initial": (par !== 'IfStatement' ? inl(il) : ''),
-                            "condition": condition,
-                            "ifStatement": tmpl(il, (ifStatementBlock ? '{sp}{{nli1}{ifStatement}{nli}}' : ' {ifStatement};'), {
-                                "ifStatement": ifStatement
-                            }),
-                            "elseStatement": elseStatement ? tmpl(il, (elseStatementBlock ? '{sp}else{sp}{{nli1}{union}{elseStatement}{nli}}' : '{initial}else {elseStatement}{separator}'), {
-                                    "elseStatement": elseStatement,
-                                    "initial": (ifStatementBlock ? sp() : nli(il)),
-                                    "union": (elseIf || elseStatement ? '' : nli(il + 1)),
-                                    "separator": (elseIf ? '' : ';')
-                                }) : ''
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}if{sp}({condition}){ifStatement}{elseStatement}', {
+                        "initial": (par !== 'IfStatement' ? inl(il) : ''),
+                        "condition": compile(il, node.type)(node.condition),
+                        "ifStatement": tmpl(il, (ifStatementBlock ? '{sp}{{nli1}{ifStatement}{nli}}' : ' {ifStatement};'), {
+                            "ifStatement": compile(il + 1, node.type)(node.ifStatement)
+                        }),
+                        "elseStatement": node.elseStatement ? tmpl(il, (elseStatementBlock ? '{sp}else{sp}{{nli1}{union}{elseStatement}{nli}}' : '{initial}else {elseStatement}{separator}'), {
+                                "elseStatement": compile(il + (!elseIf ? 1 : 0), node.type)(node.elseStatement),
+                                "initial": (ifStatementBlock ? sp() : nli(il)),
+                                "union": (elseIf ? '' : nli(il + 1)),
+                                "separator": (elseIf ? '' : ';')
+                            }) : ''
+                    }))
                 },
                 "DoWhileStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.condition, next)
-                    }, function (condition, next) {
-                        compile(il, node.type)(node.statement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, condition, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}do{condition}{sp}while{sp}{statement}', {
-                            "initial": inl(il),
-                            "condition": condition,
-                            "statement": tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
-                                "statement": statement
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}do{condition}{sp}while{sp}{statement}', {
+                        "initial": inl(il),
+                        "condition": compile(il, node.type)(node.condition),
+                        "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
+                                "statement": compile(il + 1, node.type)(node.statement)
+                            }) : ''
+                    }))
                 },
                 "WhileStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.condition, next)
-                    }, function (condition, next) {
-                        compile(il, node.type)(node.statement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, condition, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}while{sp}({condition}){statement}', {
-                            "initial": inl(il),
-                            "condition": condition,
-                            "statement": tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
-                                "statement": statement
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}while{sp}({condition}){statement}', {
+                        "initial": inl(il),
+                        "condition": compile(il, node.type)(node.condition),
+                        "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
+                                "statement": compile(il + 1, node.type)(node.statement)
+                            }) : ''
+                    }))
                 },
                 "ForStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.initializer, next)
-                    }, function (initializer, next) {
-                        compile(il, node.type)(node.test, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (initializer, test, next) {
-                        compile(il, node.type)(node.counter, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (initializer, test, counter, next) {
-                        compile(il, node.type)(node.statement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, initializer, test, counter, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}for{sp}({initializer};{sp}{test};{sp}{counter}){statement}', {
-                            "initial": inl(il),
-                            "initializer": initializer,
-                            "test": test,
-                            "counter": counter,
-                            "statement": tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
-                                "statement": statement
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}for{sp}({initializer};{sp}{test};{sp}{counter}){statement}', {
+                        "initial": inl(il),
+                        "initializer": compile(il, node.type)(node.initializer),
+                        "test": compile(il, node.type)(node.test),
+                        "counter": compile(il, node.type)(node.counter),
+                        "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
+                                "statement": compile(il + 1, node.type)(node.statement)
+                            }) : ''
+                    }))
                 },
                 "ForInStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.iterator, next)
-                    }, function (iterator, next) {
-                        compile(il, node.type)(node.collection, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (iterator, collection, next) {
-                        compile(il, node.type)(node.statement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, iterator, collection, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}for{sp}({iterator} in {collection}){statement}', {
-                            "initial": inl(il),
-                            "iterator": iterator,
-                            "collection": collection,
-                            "statement": tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
-                                "statement": statement
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}for{sp}({iterator} in {collection}){statement}', {
+                        "initial": inl(il),
+                        "iterator": compile(il, node.type)(node.iterator),
+                        "collection": compile(il, node.type)(node.collection),
+                        "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
+                                "statement": compile(il + 1, node.type)(node.statement)
+                            }) : ''
+                    }))
                 },
                 "ContinueStatement": function () {
-                    next(null, Element(node.type, 'continue'))
+                    return Element(node.type, 'continue')
                 },
                 "BreakStatement": function () {
-                    next(null, Element(node.type, 'break'))
+                    return Element(node.type, 'break')
                 },
                 "ReturnStatement": function () {
-                    compile(il, node.type)(node.value, function (err, value) {
-                        next(err, Element(node.type, 'return' + (value ? ' ' : '') + value))
-                    })
+                    var value = compile(il, node.type)(node.value);
+                    return Element(node.type, 'return' + (value ? ' ' : '') + value)
                 },
                 "WithStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.environment, next)
-                    }, function (environment, next) {
-                        compile(il, node.type)(node.statement, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, environment, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}with{sp}({environment}){statement}', {
-                            "initial": inl(il),
-                            "environment": environment,
-                            "statement": tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
-                                "statement": statement
-                            })
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}with{sp}({environment}){statement}', {
+                        "initial": inl(il),
+                        "environment": compile(il, node.type)(node.environment),
+                        "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
+                                "statement": compile(il + 1, node.type)(node.statement)
+                            }) : ''
+                    }))
                 },
                 "SwitchStatement": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.expression, next)
-                    }, function (expression, next) {
-                        be.map(node.clauses, compile(il + 1, node.type), be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, expression, clauses) {
-                        next(err, Element(node.type, tmpl(il, '{initial}switch{sp}({expression}){sp}{{clauses}}', {
-                            "initial": inl(il),
-                            "expression": expression,
-                            "clauses": clauses.length ? tmpl(il, '{nli1}{clauses}{nli1}', {
-                                    "clauses": clauses
-                                }) : ''
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}switch{sp}({expression}){sp}{{clauses}}', {
+                        "initial": inl(il),
+                        "expression": compile(il, node.type)(node.expression),
+                        "clauses": node.clauses.length ? tmpl(il, '{nl1}{clauses}{nl1}', {
+                                "clauses": node.clauses.map(compile(il + 1, node.type))
+                            }) : ''
+                    }))
                 },
                 "CaseClause": function () {
-                    be.waterfall([function (next) {
-                        compile(il, node.type)(node.selector, next)
-                    }, function (selector, next) {
-                        compile(il, node.type)(node.block, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, selector, elements) {
-                        next(err, Element(node.type, tmpl(il, 'case {selector}:{nli1}{elements}', {
-                            "selector": selector || '""',
-                            "elements": elements.length ? tmpl(il, '{nli1}{elements}', {
-                                    "elements": elements.reduce(ej(nli(il + 1), ''), '')
-                                }) : ''
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'case {selector}:{nli1}{elements}', {
+                        "selector": compile(il, node.type)(node.selector) || '""',
+                        "elements": node.elements.length ? tmpl(il, '{nl1}{elements}', {
+                                "elements": node.elements.map(compile(il + 1, node.type)).join(';' + nli(il + 1))
+                            }) : ''
+                    }))
                 },
                 "DefaultClause": function () {
-                    be.map(node.elements, compile(il, node.type), function (err, elements) {
-                        next(err, Element(node.type, tmpl(il, 'default:{nli1}{elements}', {
-                            "elements": elements.length ? tmpl(il, '{nli1}{elements}', {
-                                    "elements": elements.reduce(ej(nli(il + 1), ''), '')
-                                }) : ''
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'default:{nli1}{elements}', {
+                        "elements": node.elements.length ? tmpl(il, '{nl1}{elements}', {
+                                "elements": node.elements.map(compile(il + 1, node.type)).join(';' + nli(il + 1))
+                            }) : ''
+                    }))
                 },
                 "LabelledStatement": function () {
-                    compile(il, node.type)(node.statement, function (err, statement) {
-                        next(err, Element(node.type, tmpl(il, '{initial}{label}:{nli}{statement}', {
-                            "initial": inl(il),
-                            "label": node.label,
-                            "statement": statement
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}{label}:{nli}{statement}', {
+                        "initial": inl(il),
+                        "label": node.label,
+                        "statement": compile(il, node.type)(node.statement)
+                    }))
                 },
                 "ThrowStatement": function () {
-                    compile(il, node.type)(node.exception, function (err, exception) {
-                        next(err, Element(node.type, tmpl(il, 'throw {exception}', {
-                            "exception": exception
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, 'throw {exception}', {
+                        "exception": compile(il, node.type)(node.exception)
+                    }))
                 },
                 "TryStatement": function () {
-                    be.waterfall([function (next) {
-                        compile(il + 1, node.type)(node.block, next)
-                    }, function (block, next) {
-                        compile(il, node.type)(node.block, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }, function (block, catchBlock, next) {
-                        compile(il, node.type)(node.block, be.curry(next, 1, 0, [].slice.call(arguments, 0, -1)))
-                    }], function (err, block, catchBlock, finallyBlock) {
-                        next(err, Element(node.type, tmpl(il, '{initial}try{sp}{{nli1}{block}{nli}}{catchBlock}{finallyBlock}', {
-                            "initial": inl(il),
-                            "block": block,
-                            "catchBlock": catchBlock,
-                            "finallyBlock": finallyBlock
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{initial}try{sp}{{nli1}{block}{nli}}{catchStatement}{finallyStatement}', {
+                        "initial": inl(il),
+                        "block": compile(il + 1, node.type)(node.block),
+                        "catchStatement": compile(il, node.type)(node.catch),
+                        "finallyStatement": compile(il, node.type)(node.finally)
+                    }))
                 },
                 "Catch": function () {
-                    compile(il, node.type)(node.block, function (err, block) {
-                        next(err, Element(node.type, tmpl(il, '{sp}catch{sp}({identifier}){sp}{{nli1}{block}{nli}}', {
-                            "identifier": node.identifier,
-                            "block": block
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{sp}catch{sp}({identifier}){sp}{{nli1}{block}{nli}}', {
+                        "identifier": node.identifier,
+                        "block": compile(il + 1, node.type)(node.block)
+                    }))
                 },
                 "Finally": function () {
-                    compile(il, node.type)(node.block, function (err, block) {
-                        next(err, Element(node.type, tmpl(il, '{sp}finally{sp}{{nli1}{block}{nli}}', {
-                            "block": block
-                        })))
-                    })
+                    return Element(node.type, tmpl(il, '{sp}finally{sp}{{nli1}{block}{nli}}', {
+                        "block": compile(il + 1, node.type)(node.block)
+                    }))
                 },
                 "DebuggerStatement": function () {
-                    next(null, Element(node.type, 'debug'))
+                    return Element(node.type, 'debug')
                 },
                 "Program": function () {
-                    be.map(node.elements, compile(il, node.type), function (err, elements) {
-                        next(err, Element(node.type, elements.reduce(ej(nli(il), ''), '')))
-                    })
+                    return Element(node.type, (node.elements || []).map(compile(il, node.type)).reduce(ej(nli(il), ''), ''))
                 }
             };
             if (!node) return noop();
-            if (!node.type) return next(null, Element('Identifier', node));
+            if (!node.type) return node;
             if (node.type in rules) return rules[node.type]();
             else console.log('missed', node.type);
         }
-    }(0, null)(ast, next)
+    }(0)(ast).toString()
 }
