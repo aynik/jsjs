@@ -140,7 +140,6 @@ Keyword
       / "finally"
       / "for"
       / "function"
-      / "ƒ"
       / "if"
       / "instanceof"
       / "in"
@@ -311,15 +310,15 @@ UnicodeEscapeSequence
     }
 
 RegularExpressionLiteral "regular expression"
-  = "/" body:RegularExpressionBody "/" flags:RegularExpressionFlags {
+  = "/" elements:RegularExpressionelements "/" flags:RegularExpressionFlags {
       return {
         type:  "RegularExpressionLiteral",
-        body:  body,
+        elements:  elements,
         flags: flags
       };
     }
 
-RegularExpressionBody
+RegularExpressionelements
   = char_:RegularExpressionFirstChar chars:RegularExpressionChars {
       return char_ + chars;
     }
@@ -375,7 +374,6 @@ FalseToken      = "false"            !IdentifierPart
 FinallyToken    = "finally"          !IdentifierPart
 ForToken        = "for"              !IdentifierPart
 FunctionToken   = "function"         !IdentifierPart
-FlorinToken     = "ƒ"                !IdentifierPart
 GetToken        = "get"              !IdentifierPart
 IfToken         = "if"               !IdentifierPart
 InstanceofToken = "instanceof"       !IdentifierPart { return "instanceof"; }
@@ -539,21 +537,21 @@ PropertyAssignment
     }
   / GetToken __ name:PropertyName __
     "(" __ ")" __
-    "{" __ body:FunctionBody __ "}" {
+    "{" __ elements:Functionelements __ "}" {
       return {
         type: "GetterDefinition",
         name: name,
-        body: body
+        elements: elements
       };
     }
   / SetToken __ name:PropertyName __
     "(" __ param:PropertySetParameterList __ ")" __
-    "{" __ body:FunctionBody __ "}" {
+    "{" __ elements:Functionelements __ "}" {
       return {
         type:  "SetterDefinition",
         name:  name,
         param: param,
-        body:  body
+        elements:  elements
       };
     }
 
@@ -1132,7 +1130,7 @@ Statement
   / ThrowStatement
   / TryStatement
   / PrimaryExpression
-  / LabelledStatement
+  / LabeledStatement
   / DebuggerStatement
   / FunctionDeclaration
   / FunctionExpression
@@ -1141,7 +1139,7 @@ Block
   = "{" __ statements:(StatementList __)? "}" {
       return {
         type:       "Block",
-        statements: statements !== "" ? statements[0] : []
+        elements: statements !== "" ? statements[0] : []
       };
     }
 
@@ -1208,7 +1206,7 @@ EmptyStatement
   = ";" { return { type: "EmptyStatement" }; }
 
 ExpressionStatement
-  = !("{" / FunctionToken / FlorinToken) expression:Expression EOS { return expression; }
+  = !("{" / FunctionToken) expression:Expression EOS { return expression; }
 
 IfStatement
   = IfToken __
@@ -1342,9 +1340,9 @@ WithStatement
       };
     }
 
-LabelledStatement
+LabeledStatement
   = label:Identifier __ ":" __ statement:Statement {
-      return { type: "LabelledStatement", label: label, statement: statement };
+      return { type: "LabeledStatement", label: label, elements: statement };
     }
 
 SwitchStatement
@@ -1389,7 +1387,7 @@ CaseClause
       return {
         type:       "CaseClause",
         selector:   selector,
-        statements: statements !== "" ? statements[1] : []
+        elements: statements !== "" ? statements[1] : []
       };
     }
 
@@ -1397,7 +1395,7 @@ DefaultClause
   = DefaultToken __ ":" statements:(__ StatementList)? {
       return {
         type:       "DefaultClause",
-        statements: statements !== "" ? statements[1] : []
+        elements: statements !== "" ? statements[1] : []
       };
     }
 
@@ -1458,9 +1456,9 @@ DebuggerStatement
 /* ===== A.5 Functions and Programs ===== */
 
 FunctionDeclaration
-  = (FlorinToken / FunctionToken) __ name:Identifier __
+  = (FunctionToken) __ name:Identifier __
     "(" __ params:FormalParameterList? __ ")" __
-    "{" __ elements:FunctionBody __ "}" {
+    "{" __ elements:Functionelements __ "}" {
       return {
         type:     "Function",
         name:     name,
@@ -1470,9 +1468,9 @@ FunctionDeclaration
     }
 
 FunctionExpression
-  = (FlorinToken / FunctionToken) __ name:Identifier? __
+  = (FunctionToken) __ name:Identifier? __
     "(" __ params:FormalParameterList? __ ")" __
-    "{" __ elements:FunctionBody __ "}" {
+    "{" __ elements:Functionelements __ "}" {
       return {
         type:     "Function",
         name:     name !== "" ? name : null,
@@ -1490,7 +1488,7 @@ FormalParameterList
       return result;
     }
 
-FunctionBody
+Functionelements
   = elements:SourceElements? { return elements !== "" ? elements : []; }
 
 Program

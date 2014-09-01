@@ -1,28 +1,29 @@
 {
-    "name": "node-jsjs",
-    "description": "Javascript beautifier",
-    "keywords": [
-        "javascript",
-        "transpiler",
-        "beautifier"
-    ],
-    "author": "aynik",
-    "version": "0.1.4",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/aynik/jsjs.git"
-    },
-    "bugs": {
-        "url": "https://github.com/aynik/js/issues"
-    },
-    "bin": "./bin/jsjs",
-    "dependencies": {
-        "commander": ">=2.3.0"
-    },
-    "devDependencies": {
-        "tape": ">=2.13.4"
-    },
-    "scripts": {
-        "test": "tape test/*"
-    }
+  "name": "node-jsjs",
+  "description": "Javascript beautifier",
+  "keywords": [
+    "javascript",
+    "transpiler",
+    "beautifier"
+  ],
+  "author": "aynik",
+  "version": "0.1.4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aynik/jsjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aynik/js/issues"
+  },
+  "bin": "./bin/jsjs",
+  "dependencies": {
+    "be-async": "^0.1.4",
+    "commander": ">=2.3.0"
+  },
+  "devDependencies": {
+    "tape": ">=2.13.4"
+  },
+  "scripts": {
+    "test": "tape test/*"
+  }
 }

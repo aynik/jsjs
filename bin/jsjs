@@ -4,8 +4,9 @@ var fs = require('fs');
 var program = require('commander')
   .version(require('../package').version)
   .usage('[options] file [..files]')
-  .option('-t, --tab [number of spaces]', 'tabulate output with selected number of spaces')
+  .option('-t, --tab [number]', 'tabulate output with selected number of spaces (default: 0)', 0)
   .option('-c, --compress', 'drop unnecessary white space')
+  .option('-l, --language [languaje]', 'parse another language instead of javascript (default: js)', 'js')
   .parse(process.argv);
 
 program.args.map(function(src){
@@ -16,6 +17,9 @@ program.args.map(function(src){
            source = source.substr(
                source.indexOf('\n')+1, source.length);
        }
-       console.log(require('../').read(program, source));
+       require('../').read(program, source, function(err, code){
+           if (err) throw new err;
+           console.log(code.toString());
+       });
    });
 });

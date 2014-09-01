@@ -77,15 +77,14 @@ module.exports = (function(){
         "FalseToken": parse_FalseToken,
         "Finally": parse_Finally,
         "FinallyToken": parse_FinallyToken,
-        "FlorinToken": parse_FlorinToken,
         "ForInStatement": parse_ForInStatement,
         "ForStatement": parse_ForStatement,
         "ForToken": parse_ForToken,
         "FormalParameterList": parse_FormalParameterList,
-        "FunctionBody": parse_FunctionBody,
         "FunctionDeclaration": parse_FunctionDeclaration,
         "FunctionExpression": parse_FunctionExpression,
         "FunctionToken": parse_FunctionToken,
+        "Functionelements": parse_Functionelements,
         "FutureReservedWord": parse_FutureReservedWord,
         "GetToken": parse_GetToken,
         "HexDigit": parse_HexDigit,
@@ -103,7 +102,7 @@ module.exports = (function(){
         "InstanceofToken": parse_InstanceofToken,
         "IterationStatement": parse_IterationStatement,
         "Keyword": parse_Keyword,
-        "LabelledStatement": parse_LabelledStatement,
+        "LabeledStatement": parse_LabeledStatement,
         "LeftHandSideExpression": parse_LeftHandSideExpression,
         "LineContinuation": parse_LineContinuation,
         "LineTerminator": parse_LineTerminator,
@@ -146,7 +145,6 @@ module.exports = (function(){
         "PropertyName": parse_PropertyName,
         "PropertyNameAndValueList": parse_PropertyNameAndValueList,
         "RegularExpressionBackslashSequence": parse_RegularExpressionBackslashSequence,
-        "RegularExpressionBody": parse_RegularExpressionBody,
         "RegularExpressionChar": parse_RegularExpressionChar,
         "RegularExpressionChars": parse_RegularExpressionChars,
         "RegularExpressionClass": parse_RegularExpressionClass,
@@ -156,6 +154,7 @@ module.exports = (function(){
         "RegularExpressionFlags": parse_RegularExpressionFlags,
         "RegularExpressionLiteral": parse_RegularExpressionLiteral,
         "RegularExpressionNonTerminator": parse_RegularExpressionNonTerminator,
+        "RegularExpressionelements": parse_RegularExpressionelements,
         "RelationalExpression": parse_RelationalExpression,
         "RelationalExpressionNoIn": parse_RelationalExpressionNoIn,
         "RelationalOperator": parse_RelationalOperator,
@@ -1312,331 +1311,318 @@ module.exports = (function(){
         
         var savedPos0 = pos;
         if (input.substr(pos, 5) === "break") {
-          var result30 = "break";
+          var result29 = "break";
           pos += 5;
         } else {
-          var result30 = null;
+          var result29 = null;
           if (reportMatchFailures) {
             matchFailed("\"break\"");
           }
         }
-        if (result30 !== null) {
-          var result1 = result30;
+        if (result29 !== null) {
+          var result1 = result29;
         } else {
           if (input.substr(pos, 4) === "case") {
-            var result29 = "case";
+            var result28 = "case";
             pos += 4;
           } else {
-            var result29 = null;
+            var result28 = null;
             if (reportMatchFailures) {
               matchFailed("\"case\"");
             }
           }
-          if (result29 !== null) {
-            var result1 = result29;
+          if (result28 !== null) {
+            var result1 = result28;
           } else {
             if (input.substr(pos, 5) === "catch") {
-              var result28 = "catch";
+              var result27 = "catch";
               pos += 5;
             } else {
-              var result28 = null;
+              var result27 = null;
               if (reportMatchFailures) {
                 matchFailed("\"catch\"");
               }
             }
-            if (result28 !== null) {
-              var result1 = result28;
+            if (result27 !== null) {
+              var result1 = result27;
             } else {
               if (input.substr(pos, 8) === "continue") {
-                var result27 = "continue";
+                var result26 = "continue";
                 pos += 8;
               } else {
-                var result27 = null;
+                var result26 = null;
                 if (reportMatchFailures) {
                   matchFailed("\"continue\"");
                 }
               }
-              if (result27 !== null) {
-                var result1 = result27;
+              if (result26 !== null) {
+                var result1 = result26;
               } else {
                 if (input.substr(pos, 8) === "debugger") {
-                  var result26 = "debugger";
+                  var result25 = "debugger";
                   pos += 8;
                 } else {
-                  var result26 = null;
+                  var result25 = null;
                   if (reportMatchFailures) {
                     matchFailed("\"debugger\"");
                   }
                 }
-                if (result26 !== null) {
-                  var result1 = result26;
+                if (result25 !== null) {
+                  var result1 = result25;
                 } else {
                   if (input.substr(pos, 7) === "default") {
-                    var result25 = "default";
+                    var result24 = "default";
                     pos += 7;
                   } else {
-                    var result25 = null;
+                    var result24 = null;
                     if (reportMatchFailures) {
                       matchFailed("\"default\"");
                     }
                   }
-                  if (result25 !== null) {
-                    var result1 = result25;
+                  if (result24 !== null) {
+                    var result1 = result24;
                   } else {
                     if (input.substr(pos, 6) === "delete") {
-                      var result24 = "delete";
+                      var result23 = "delete";
                       pos += 6;
                     } else {
-                      var result24 = null;
+                      var result23 = null;
                       if (reportMatchFailures) {
                         matchFailed("\"delete\"");
                       }
                     }
-                    if (result24 !== null) {
-                      var result1 = result24;
+                    if (result23 !== null) {
+                      var result1 = result23;
                     } else {
                       if (input.substr(pos, 2) === "do") {
-                        var result23 = "do";
+                        var result22 = "do";
                         pos += 2;
                       } else {
-                        var result23 = null;
+                        var result22 = null;
                         if (reportMatchFailures) {
                           matchFailed("\"do\"");
                         }
                       }
-                      if (result23 !== null) {
-                        var result1 = result23;
+                      if (result22 !== null) {
+                        var result1 = result22;
                       } else {
                         if (input.substr(pos, 4) === "else") {
-                          var result22 = "else";
+                          var result21 = "else";
                           pos += 4;
                         } else {
-                          var result22 = null;
+                          var result21 = null;
                           if (reportMatchFailures) {
                             matchFailed("\"else\"");
                           }
                         }
-                        if (result22 !== null) {
-                          var result1 = result22;
+                        if (result21 !== null) {
+                          var result1 = result21;
                         } else {
                           if (input.substr(pos, 7) === "finally") {
-                            var result21 = "finally";
+                            var result20 = "finally";
                             pos += 7;
                           } else {
-                            var result21 = null;
+                            var result20 = null;
                             if (reportMatchFailures) {
                               matchFailed("\"finally\"");
                             }
                           }
-                          if (result21 !== null) {
-                            var result1 = result21;
+                          if (result20 !== null) {
+                            var result1 = result20;
                           } else {
                             if (input.substr(pos, 3) === "for") {
-                              var result20 = "for";
+                              var result19 = "for";
                               pos += 3;
                             } else {
-                              var result20 = null;
+                              var result19 = null;
                               if (reportMatchFailures) {
                                 matchFailed("\"for\"");
                               }
                             }
-                            if (result20 !== null) {
-                              var result1 = result20;
+                            if (result19 !== null) {
+                              var result1 = result19;
                             } else {
                               if (input.substr(pos, 8) === "function") {
-                                var result19 = "function";
+                                var result18 = "function";
                                 pos += 8;
                               } else {
-                                var result19 = null;
+                                var result18 = null;
                                 if (reportMatchFailures) {
                                   matchFailed("\"function\"");
                                 }
                               }
-                              if (result19 !== null) {
-                                var result1 = result19;
+                              if (result18 !== null) {
+                                var result1 = result18;
                               } else {
-                                if (input.substr(pos, 1) === "\u0192") {
-                                  var result18 = "\u0192";
-                                  pos += 1;
+                                if (input.substr(pos, 2) === "if") {
+                                  var result17 = "if";
+                                  pos += 2;
                                 } else {
-                                  var result18 = null;
+                                  var result17 = null;
                                   if (reportMatchFailures) {
-                                    matchFailed("\"\\u0192\"");
+                                    matchFailed("\"if\"");
                                   }
                                 }
-                                if (result18 !== null) {
-                                  var result1 = result18;
+                                if (result17 !== null) {
+                                  var result1 = result17;
                                 } else {
-                                  if (input.substr(pos, 2) === "if") {
-                                    var result17 = "if";
-                                    pos += 2;
+                                  if (input.substr(pos, 10) === "instanceof") {
+                                    var result16 = "instanceof";
+                                    pos += 10;
                                   } else {
-                                    var result17 = null;
+                                    var result16 = null;
                                     if (reportMatchFailures) {
-                                      matchFailed("\"if\"");
+                                      matchFailed("\"instanceof\"");
                                     }
                                   }
-                                  if (result17 !== null) {
-                                    var result1 = result17;
+                                  if (result16 !== null) {
+                                    var result1 = result16;
                                   } else {
-                                    if (input.substr(pos, 10) === "instanceof") {
-                                      var result16 = "instanceof";
-                                      pos += 10;
+                                    if (input.substr(pos, 2) === "in") {
+                                      var result15 = "in";
+                                      pos += 2;
                                     } else {
-                                      var result16 = null;
+                                      var result15 = null;
                                       if (reportMatchFailures) {
-                                        matchFailed("\"instanceof\"");
+                                        matchFailed("\"in\"");
                                       }
                                     }
-                                    if (result16 !== null) {
-                                      var result1 = result16;
+                                    if (result15 !== null) {
+                                      var result1 = result15;
                                     } else {
-                                      if (input.substr(pos, 2) === "in") {
-                                        var result15 = "in";
-                                        pos += 2;
+                                      if (input.substr(pos, 3) === "new") {
+                                        var result14 = "new";
+                                        pos += 3;
                                       } else {
-                                        var result15 = null;
+                                        var result14 = null;
                                         if (reportMatchFailures) {
-                                          matchFailed("\"in\"");
+                                          matchFailed("\"new\"");
                                         }
                                       }
-                                      if (result15 !== null) {
-                                        var result1 = result15;
+                                      if (result14 !== null) {
+                                        var result1 = result14;
                                       } else {
-                                        if (input.substr(pos, 3) === "new") {
-                                          var result14 = "new";
-                                          pos += 3;
+                                        if (input.substr(pos, 6) === "return") {
+                                          var result13 = "return";
+                                          pos += 6;
                                         } else {
-                                          var result14 = null;
+                                          var result13 = null;
                                           if (reportMatchFailures) {
-                                            matchFailed("\"new\"");
+                                            matchFailed("\"return\"");
                                           }
                                         }
-                                        if (result14 !== null) {
-                                          var result1 = result14;
+                                        if (result13 !== null) {
+                                          var result1 = result13;
                                         } else {
-                                          if (input.substr(pos, 6) === "return") {
-                                            var result13 = "return";
+                                          if (input.substr(pos, 6) === "switch") {
+                                            var result12 = "switch";
                                             pos += 6;
                                           } else {
-                                            var result13 = null;
+                                            var result12 = null;
                                             if (reportMatchFailures) {
-                                              matchFailed("\"return\"");
+                                              matchFailed("\"switch\"");
                                             }
                                           }
-                                          if (result13 !== null) {
-                                            var result1 = result13;
+                                          if (result12 !== null) {
+                                            var result1 = result12;
                                           } else {
-                                            if (input.substr(pos, 6) === "switch") {
-                                              var result12 = "switch";
-                                              pos += 6;
+                                            if (input.substr(pos, 4) === "this") {
+                                              var result11 = "this";
+                                              pos += 4;
                                             } else {
-                                              var result12 = null;
+                                              var result11 = null;
                                               if (reportMatchFailures) {
-                                                matchFailed("\"switch\"");
+                                                matchFailed("\"this\"");
                                               }
                                             }
-                                            if (result12 !== null) {
-                                              var result1 = result12;
+                                            if (result11 !== null) {
+                                              var result1 = result11;
                                             } else {
-                                              if (input.substr(pos, 4) === "this") {
-                                                var result11 = "this";
-                                                pos += 4;
+                                              if (input.substr(pos, 5) === "throw") {
+                                                var result10 = "throw";
+                                                pos += 5;
                                               } else {
-                                                var result11 = null;
+                                                var result10 = null;
                                                 if (reportMatchFailures) {
-                                                  matchFailed("\"this\"");
+                                                  matchFailed("\"throw\"");
                                                 }
                                               }
-                                              if (result11 !== null) {
-                                                var result1 = result11;
+                                              if (result10 !== null) {
+                                                var result1 = result10;
                                               } else {
-                                                if (input.substr(pos, 5) === "throw") {
-                                                  var result10 = "throw";
-                                                  pos += 5;
+                                                if (input.substr(pos, 3) === "try") {
+                                                  var result9 = "try";
+                                                  pos += 3;
                                                 } else {
-                                                  var result10 = null;
+                                                  var result9 = null;
                                                   if (reportMatchFailures) {
-                                                    matchFailed("\"throw\"");
+                                                    matchFailed("\"try\"");
                                                   }
                                                 }
-                                                if (result10 !== null) {
-                                                  var result1 = result10;
+                                                if (result9 !== null) {
+                                                  var result1 = result9;
                                                 } else {
-                                                  if (input.substr(pos, 3) === "try") {
-                                                    var result9 = "try";
-                                                    pos += 3;
+                                                  if (input.substr(pos, 6) === "typeof") {
+                                                    var result8 = "typeof";
+                                                    pos += 6;
                                                   } else {
-                                                    var result9 = null;
+                                                    var result8 = null;
                                                     if (reportMatchFailures) {
-                                                      matchFailed("\"try\"");
+                                                      matchFailed("\"typeof\"");
                                                     }
                                                   }
-                                                  if (result9 !== null) {
-                                                    var result1 = result9;
+                                                  if (result8 !== null) {
+                                                    var result1 = result8;
                                                   } else {
-                                                    if (input.substr(pos, 6) === "typeof") {
-                                                      var result8 = "typeof";
-                                                      pos += 6;
+                                                    if (input.substr(pos, 3) === "var") {
+                                                      var result7 = "var";
+                                                      pos += 3;
                                                     } else {
-                                                      var result8 = null;
+                                                      var result7 = null;
                                                       if (reportMatchFailures) {
-                                                        matchFailed("\"typeof\"");
+                                                        matchFailed("\"var\"");
                                                       }
                                                     }
-                                                    if (result8 !== null) {
-                                                      var result1 = result8;
+                                                    if (result7 !== null) {
+                                                      var result1 = result7;
                                                     } else {
-                                                      if (input.substr(pos, 3) === "var") {
-                                                        var result7 = "var";
-                                                        pos += 3;
+                                                      if (input.substr(pos, 4) === "void") {
+                                                        var result6 = "void";
+                                                        pos += 4;
                                                       } else {
-                                                        var result7 = null;
+                                                        var result6 = null;
                                                         if (reportMatchFailures) {
-                                                          matchFailed("\"var\"");
+                                                          matchFailed("\"void\"");
                                                         }
                                                       }
-                                                      if (result7 !== null) {
-                                                        var result1 = result7;
+                                                      if (result6 !== null) {
+                                                        var result1 = result6;
                                                       } else {
-                                                        if (input.substr(pos, 4) === "void") {
-                                                          var result6 = "void";
-                                                          pos += 4;
+                                                        if (input.substr(pos, 5) === "while") {
+                                                          var result5 = "while";
+                                                          pos += 5;
                                                         } else {
-                                                          var result6 = null;
+                                                          var result5 = null;
                                                           if (reportMatchFailures) {
-                                                            matchFailed("\"void\"");
+                                                            matchFailed("\"while\"");
                                                           }
                                                         }
-                                                        if (result6 !== null) {
-                                                          var result1 = result6;
+                                                        if (result5 !== null) {
+                                                          var result1 = result5;
                                                         } else {
-                                                          if (input.substr(pos, 5) === "while") {
-                                                            var result5 = "while";
-                                                            pos += 5;
+                                                          if (input.substr(pos, 4) === "with") {
+                                                            var result4 = "with";
+                                                            pos += 4;
                                                           } else {
-                                                            var result5 = null;
+                                                            var result4 = null;
                                                             if (reportMatchFailures) {
-                                                              matchFailed("\"while\"");
+                                                              matchFailed("\"with\"");
                                                             }
                                                           }
-                                                          if (result5 !== null) {
-                                                            var result1 = result5;
+                                                          if (result4 !== null) {
+                                                            var result1 = result4;
                                                           } else {
-                                                            if (input.substr(pos, 4) === "with") {
-                                                              var result4 = "with";
-                                                              pos += 4;
-                                                            } else {
-                                                              var result4 = null;
-                                                              if (reportMatchFailures) {
-                                                                matchFailed("\"with\"");
-                                                              }
-                                                            }
-                                                            if (result4 !== null) {
-                                                              var result1 = result4;
-                                                            } else {
-                                                              var result1 = null;;
-                                                            };
+                                                            var result1 = null;;
                                                           };
                                                         };
                                                       };
@@ -3518,7 +3504,7 @@ module.exports = (function(){
           }
         }
         if (result3 !== null) {
-          var result4 = parse_RegularExpressionBody();
+          var result4 = parse_RegularExpressionelements();
           if (result4 !== null) {
             if (input.substr(pos, 1) === "/") {
               var result5 = "/";
@@ -3550,10 +3536,10 @@ module.exports = (function(){
           pos = savedPos1;
         }
         var result2 = result1 !== null
-          ? (function(body, flags) {
+          ? (function(elements, flags) {
                 return {
                   type:  "RegularExpressionLiteral",
-                  body:  body,
+                  elements:  elements,
                   flags: flags
                 };
               })(result1[1], result1[3])
@@ -3576,8 +3562,8 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_RegularExpressionBody() {
-        var cacheKey = 'RegularExpressionBody@' + pos;
+      function parse_RegularExpressionelements() {
+        var cacheKey = 'RegularExpressionelements@' + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;
@@ -4757,57 +4743,6 @@ module.exports = (function(){
           var result1 = null;
           if (reportMatchFailures) {
             matchFailed("\"function\"");
-          }
-        }
-        if (result1 !== null) {
-          var savedPos1 = pos;
-          var savedReportMatchFailuresVar0 = reportMatchFailures;
-          reportMatchFailures = false;
-          var result3 = parse_IdentifierPart();
-          reportMatchFailures = savedReportMatchFailuresVar0;
-          if (result3 === null) {
-            var result2 = '';
-          } else {
-            var result2 = null;
-            pos = savedPos1;
-          }
-          if (result2 !== null) {
-            var result0 = [result1, result2];
-          } else {
-            var result0 = null;
-            pos = savedPos0;
-          }
-        } else {
-          var result0 = null;
-          pos = savedPos0;
-        }
-        
-        
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_FlorinToken() {
-        var cacheKey = 'FlorinToken@' + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        
-        var savedPos0 = pos;
-        if (input.substr(pos, 1) === "\u0192") {
-          var result1 = "\u0192";
-          pos += 1;
-        } else {
-          var result1 = null;
-          if (reportMatchFailures) {
-            matchFailed("\"\\u0192\"");
           }
         }
         if (result1 !== null) {
@@ -7333,7 +7268,7 @@ module.exports = (function(){
                           if (result30 !== null) {
                             var result31 = parse___();
                             if (result31 !== null) {
-                              var result32 = parse_FunctionBody();
+                              var result32 = parse_Functionelements();
                               if (result32 !== null) {
                                 var result33 = parse___();
                                 if (result33 !== null) {
@@ -7401,11 +7336,11 @@ module.exports = (function(){
             pos = savedPos3;
           }
           var result21 = result20 !== null
-            ? (function(name, body) {
+            ? (function(name, elements) {
                   return {
                     type: "GetterDefinition",
                     name: name,
-                    body: body
+                    elements: elements
                   };
                 })(result20[2], result20[10])
             : null;
@@ -7468,7 +7403,7 @@ module.exports = (function(){
                                 if (result14 !== null) {
                                   var result15 = parse___();
                                   if (result15 !== null) {
-                                    var result16 = parse_FunctionBody();
+                                    var result16 = parse_Functionelements();
                                     if (result16 !== null) {
                                       var result17 = parse___();
                                       if (result17 !== null) {
@@ -7544,12 +7479,12 @@ module.exports = (function(){
               pos = savedPos1;
             }
             var result3 = result2 !== null
-              ? (function(name, param, body) {
+              ? (function(name, param, elements) {
                     return {
                       type:  "SetterDefinition",
                       name:  name,
                       param: param,
-                      body:  body
+                      elements:  elements
                     };
                   })(result2[2], result2[6], result2[12])
               : null;
@@ -12703,7 +12638,7 @@ module.exports = (function(){
                                   if (result5 !== null) {
                                     var result0 = result5;
                                   } else {
-                                    var result4 = parse_LabelledStatement();
+                                    var result4 = parse_LabeledStatement();
                                     if (result4 !== null) {
                                       var result0 = result4;
                                     } else {
@@ -12818,7 +12753,7 @@ module.exports = (function(){
           ? (function(statements) {
                 return {
                   type:       "Block",
-                  statements: statements !== "" ? statements[0] : []
+                  elements: statements !== "" ? statements[0] : []
                 };
               })(result1[2])
           : null;
@@ -13545,27 +13480,22 @@ module.exports = (function(){
         var savedReportMatchFailuresVar0 = reportMatchFailures;
         reportMatchFailures = false;
         if (input.substr(pos, 1) === "{") {
-          var result9 = "{";
+          var result8 = "{";
           pos += 1;
         } else {
-          var result9 = null;
+          var result8 = null;
           if (reportMatchFailures) {
             matchFailed("\"{\"");
           }
         }
-        if (result9 !== null) {
-          var result6 = result9;
+        if (result8 !== null) {
+          var result6 = result8;
         } else {
-          var result8 = parse_FunctionToken();
-          if (result8 !== null) {
-            var result6 = result8;
+          var result7 = parse_FunctionToken();
+          if (result7 !== null) {
+            var result6 = result7;
           } else {
-            var result7 = parse_FlorinToken();
-            if (result7 !== null) {
-              var result6 = result7;
-            } else {
-              var result6 = null;;
-            };
+            var result6 = null;;
           };
         }
         reportMatchFailures = savedReportMatchFailuresVar0;
@@ -14813,8 +14743,8 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_LabelledStatement() {
-        var cacheKey = 'LabelledStatement@' + pos;
+      function parse_LabeledStatement() {
+        var cacheKey = 'LabeledStatement@' + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;
@@ -14865,7 +14795,7 @@ module.exports = (function(){
         }
         var result2 = result1 !== null
           ? (function(label, statement) {
-                return { type: "LabelledStatement", label: label, statement: statement };
+                return { type: "LabeledStatement", label: label, elements: statement };
               })(result1[0], result1[4])
           : null;
         if (result2 !== null) {
@@ -15270,7 +15200,7 @@ module.exports = (function(){
                 return {
                   type:       "CaseClause",
                   selector:   selector,
-                  statements: statements !== "" ? statements[1] : []
+                  elements: statements !== "" ? statements[1] : []
                 };
               })(result1[2], result1[5])
           : null;
@@ -15352,7 +15282,7 @@ module.exports = (function(){
           ? (function(statements) {
                 return {
                   type:       "DefaultClause",
-                  statements: statements !== "" ? statements[1] : []
+                  elements: statements !== "" ? statements[1] : []
                 };
               })(result1[3])
           : null;
@@ -15838,17 +15768,7 @@ module.exports = (function(){
         
         var savedPos0 = pos;
         var savedPos1 = pos;
-        var result20 = parse_FlorinToken();
-        if (result20 !== null) {
-          var result3 = result20;
-        } else {
-          var result19 = parse_FunctionToken();
-          if (result19 !== null) {
-            var result3 = result19;
-          } else {
-            var result3 = null;;
-          };
-        }
+        var result3 = parse_FunctionToken();
         if (result3 !== null) {
           var result4 = parse___();
           if (result4 !== null) {
@@ -15897,7 +15817,7 @@ module.exports = (function(){
                             if (result13 !== null) {
                               var result14 = parse___();
                               if (result14 !== null) {
-                                var result15 = parse_FunctionBody();
+                                var result15 = parse_Functionelements();
                                 if (result15 !== null) {
                                   var result16 = parse___();
                                   if (result16 !== null) {
@@ -16009,17 +15929,7 @@ module.exports = (function(){
         
         var savedPos0 = pos;
         var savedPos1 = pos;
-        var result21 = parse_FlorinToken();
-        if (result21 !== null) {
-          var result3 = result21;
-        } else {
-          var result20 = parse_FunctionToken();
-          if (result20 !== null) {
-            var result3 = result20;
-          } else {
-            var result3 = null;;
-          };
-        }
+        var result3 = parse_FunctionToken();
         if (result3 !== null) {
           var result4 = parse___();
           if (result4 !== null) {
@@ -16069,7 +15979,7 @@ module.exports = (function(){
                             if (result13 !== null) {
                               var result14 = parse___();
                               if (result14 !== null) {
-                                var result15 = parse_FunctionBody();
+                                var result15 = parse_Functionelements();
                                 if (result15 !== null) {
                                   var result16 = parse___();
                                   if (result16 !== null) {
@@ -16290,8 +16200,8 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_FunctionBody() {
-        var cacheKey = 'FunctionBody@' + pos;
+      function parse_Functionelements() {
+        var cacheKey = 'Functionelements@' + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;
