@@ -27,6 +27,7 @@ $ jsjs [options] <file> [...<files>]
 
 * [`--tab, -t [number of spaces]`](#tab)
 * [`--compress, -c`](#compress)
+* [`--language, -l [language]`](#language)
 
 ---
 
@@ -43,6 +44,17 @@ Indents code with `number of spaces` for each indentation level.
 ### jsjs --compress | -c
 
 Removes optional whitespace between statements and declarations.
+
+---
+
+<a name="language" />
+### jsjs --language [language] | -l [language]
+
+Use another input language instead of javascript.
+
+Supported languages:
+        
+    - Javascript, code: **js**
 
 ---
 
