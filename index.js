@@ -1,20 +1,43 @@
+exports.dialects = require('fs').readdirSync(require('path').resolve(__dirname, 'parsers')).map(function (s) {
+    return (s !== ('js.js') && s.match(/(.+)\.js$/) || [0, 0])[1]
+}).filter(isNaN);
+exports.register = function (ext) {
+    ext = [].concat(ext);
+    ext.forEach(function (ext) {
+        require.extensions['.' + ext] = function (module, path) {
+            return module._compile(require('./').read({
+                "dialect": ext
+            }, require('fs').readFileSync(path, 'utf-8')), path)
+        }
+    })
+};
 exports.read = function (opts, input) {
     return compile(opts, parse(opts, input))
 };
 var parse = exports.parse = function (opts, input) {
-    return require('./parsers/' + opts.language).parse(input)
+    var ast = require('./parsers/' + opts.dialect).parse(input);
+    if (opts.ast) return console.log(JSON.stringify(ast, null, 4)) && '';
+    return ast
 };
 var compile = exports.compile = function (opts, ast) {
     opts = opts || {};
     opts.tab = opts.tab || -1;
     var tab = new Array(parseInt((opts.tab === -1 ? 0 : opts.tab), 10) + 1).join(' ');
     var inlineElements = {
+        "Program": 0,
         "GroupedExpression": 0,
         "AssignmentExpression": 0,
         "FunctionCall": 0,
+        "ForInStatement": 0,
+        "ForStatement": 0,
+        "IfStatement": 0,
         "VariableDeclaration": 0,
         "PropertyAccess": 0,
         "PropertyAssignment": 0
+    };
+    var ifStatementInline = {
+        "IfStatement": 0,
+        "Block": 0
     };
     var notTerminatedElements = {
         "IfStatement": 0,
@@ -22,15 +45,8 @@ var compile = exports.compile = function (opts, ast) {
         "ForInStatement": 0,
         "Function": 0,
         "WhileStatement": 0,
-        "DoWhileStatement": 0,
         "WithStatement": 0,
         "SwitchStatement": 0
-    };
-    var bracketAccess = {
-        "Expression": 0,
-        "Variable": 0,
-        "NumericLiteral": 0,
-        "PropertyAccess": 0
     };
     var ind = function (il) {
         if (!opts.tab) return '';
@@ -80,14 +96,14 @@ var compile = exports.compile = function (opts, ast) {
     Element.prototype.toString = function () {
         return this.code
     };
-    return function compile (il, par) {
+    return function compile(il, par) {
         il = il || 0;
         return function (node) {
             var rules = {
                 "Function": function () {
                     return Element(node.type, tmpl(il, '{initial}function{name}({params}){sp}{{elements}}', {
                         "initial": (!(par in inlineElements) ? inl(il) : ''),
-                        "name": node.name ? ' ' + node.name + sp() : sp(),
+                        "name": node.name ? ' ' + node.name : sp(),
                         "params": node.params.join(',' + sp()),
                         "elements": (node.elements && node.elements.length ? nli(il + 1) + node.elements.map(compile(il + 1, node.type)).reduce(ej(nli(il + 1), nli(il)), '') : '')
                     }))
@@ -100,7 +116,7 @@ var compile = exports.compile = function (opts, ast) {
                     }))
                 },
                 "PropertyAccess": function () {
-                    return Element(node.type, tmpl(il, (node.name.type in bracketAccess ? '{base}[{name}]' : '{base}.{name}'), {
+                    return Element(node.type, tmpl(il, (!node.name.type ? '{base}.{name}' : '{base}[{name}]'), {
                         "base": compile(il, node.type)(node.base),
                         "name": compile(il, node.type)(node.name)
                     }))
@@ -210,7 +226,7 @@ var compile = exports.compile = function (opts, ast) {
                 },
                 "VariableStatement": function () {
                     return Element(node.type, tmpl(il, 'var {declarations}', {
-                        "declarations": (node.declarations || []).map(compile(il, node.type)).join(';' + nli(il) + 'var ')
+                        "declarations": (node.declarations || []).map(compile(il, node.type)).join(', ' + (!(par in inlineElements) ? nli(il + 1) : ''))
                     }))
                 },
                 "VariableDeclaration": function () {
@@ -224,8 +240,9 @@ var compile = exports.compile = function (opts, ast) {
                 "BinaryExpression": function () {
                     return Element(node.type, tmpl(il, '{left}{operator}{right}', {
                         "left": compile(il, node.type)(node.left),
-                        "operator": tmpl(il, (node.operator === ',' ? '{operator}{nli}' : '{sp}{operator}{sp}'), {
-                            "operator": node.operator
+                        "operator": tmpl(il, (node.operator === ',' ? '{operator}{union}' : '{sp}{operator}{sp}'), {
+                            "operator": node.operator,
+                            "union": !(par in inlineElements) ? nli(il + 1) : sp()
                         }),
                         "right": compile(il, node.type)(node.right)
                     }))
@@ -238,7 +255,7 @@ var compile = exports.compile = function (opts, ast) {
                     var elseStatementBlock = node.elseStatement && node.elseStatement.elements && node.elseStatement.elements.length;
                     var elseIf = node.elseStatement && node.elseStatement.type === 'IfStatement';
                     return Element(node.type, tmpl(il, '{initial}if{sp}({condition}){ifStatement}{elseStatement}', {
-                        "initial": (par !== 'IfStatement' ? inl(il) : ''),
+                        "initial": !(par in ifStatementInline) ? inl(il) : '',
                         "condition": compile(il, node.type)(node.condition),
                         "ifStatement": tmpl(il, (ifStatementBlock ? '{sp}{{nli1}{ifStatement}{nli}}' : ' {ifStatement};'), {
                             "ifStatement": compile(il + 1, node.type)(node.ifStatement)
@@ -253,7 +270,7 @@ var compile = exports.compile = function (opts, ast) {
                 },
                 "DoWhileStatement": function () {
                     var statementBlock = node.statement && node.statement.elements && node.statement.elements.length;
-                    return Element(node.type, tmpl(il, '{initial}do{condition}{sp}while{sp}{statement}', {
+                    return Element(node.type, tmpl(il, '{initial}do{sp}{statement}{sp}while{sp}({condition})', {
                         "initial": inl(il),
                         "condition": compile(il, node.type)(node.condition),
                         "statement": node.statement ? tmpl(il, (statementBlock ? '{sp}{{nli1}{statement}{nli}}' : ' {statement};'), {
@@ -318,22 +335,22 @@ var compile = exports.compile = function (opts, ast) {
                     return Element(node.type, tmpl(il, '{initial}switch{sp}({expression}){sp}{{clauses}}', {
                         "initial": inl(il),
                         "expression": compile(il, node.type)(node.expression),
-                        "clauses": node.clauses.length ? tmpl(il, '{nl1}{clauses}{nl1}', {
-                                "clauses": node.clauses.map(compile(il + 1, node.type))
+                        "clauses": node.clauses.length ? tmpl(il, '{nli1}{clauses}{nli}', {
+                                "clauses": node.clauses.map(compile(il + 1, node.type)).join(';' + nli(il + 1))
                             }) : ''
                     }))
                 },
                 "CaseClause": function () {
-                    return Element(node.type, tmpl(il, 'case {selector}:{nli1}{elements}', {
+                    return Element(node.type, tmpl(il, 'case {selector}:{elements}', {
                         "selector": compile(il, node.type)(node.selector) || '""',
-                        "elements": node.elements.length ? tmpl(il, '{nl1}{elements}', {
+                        "elements": node.elements.length ? tmpl(il, '{nli1}{elements}', {
                                 "elements": node.elements.map(compile(il + 1, node.type)).join(';' + nli(il + 1))
                             }) : ''
                     }))
                 },
                 "DefaultClause": function () {
-                    return Element(node.type, tmpl(il, 'default:{nli1}{elements}', {
-                        "elements": node.elements.length ? tmpl(il, '{nl1}{elements}', {
+                    return Element(node.type, tmpl(il, 'default:{elements}', {
+                        "elements": node.elements.length ? tmpl(il, '{nli1}{elements}', {
                                 "elements": node.elements.map(compile(il + 1, node.type)).join(';' + nli(il + 1))
                             }) : ''
                     }))

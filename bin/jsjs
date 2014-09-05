@@ -6,7 +6,8 @@ var program = require('commander')
   .usage('[options] file [..files]')
   .option('-t, --tab [number]', 'tabulate output with selected number of spaces (default: 0)', 0)
   .option('-c, --compress', 'drop unnecessary white space')
-  .option('-l, --language [languaje]', 'parse another language instead of javascript (default: js)', 'js')
+  .option('-a, --ast', 'print ast')
+  .option('-d, --dialect [dialect]', 'parse another dialect instead of standard javascript (default: js)', 'js')
   .parse(process.argv);
 
 program.args.map(function(src){
