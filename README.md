@@ -27,7 +27,7 @@ $ jsjs [options] <file> [...<files>]
 
 * [`--tab, -t [number of spaces]`](#tab)
 * [`--compress, -c`](#compress)
-* [`--dialect, -l [dialect]`](#dialect)
+* [`--dialect, -d [dialect]`](#dialect)
 
 ---
 
@@ -48,7 +48,7 @@ Removes optional whitespace between statements and declarations.
 ---
 
 <a name="dialect" />
-### jsjs --dialect [dialect] | -l [dialect]
+### jsjs --dialect [dialect] | -d [dialect]
 
 Use another input dialect instead of javascript.
 
